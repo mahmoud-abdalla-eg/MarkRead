@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { parseMarkdown } from './lib/markdown';
 import { SAMPLE_MARKDOWN } from './lib/sampleMarkdown';
+import { TokenBucketLimiter, DropThrottler } from './lib/rateLimiter';
 import './App.css';
 
 export function App() {
@@ -9,6 +10,15 @@ export function App() {
   const [isDark, setIsDark] = useState<boolean>(true);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string>('EXPLANATION_FOR_YOU.md');
+
+  // Rate Limiting States
+  const [pdfCooldown, setPdfCooldown] = useState<number>(0);
+  const [toast, setToast] = useState<{ message: string; type?: 'warning' | 'error' } | null>(null);
+
+  const pdfLimiter = useRef(new TokenBucketLimiter(3, 5000, 15));
+  const dropLimiter = useRef(new DropThrottler(3, 5000));
+  const toastTimeoutRef = useRef<any>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -16,6 +26,31 @@ export function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
   }, [isDark]);
+
+  // Cooldown countdown timer
+  useEffect(() => {
+    if (pdfCooldown <= 0) return;
+    const interval = setInterval(() => {
+      setPdfCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [pdfCooldown]);
+
+  const showToast = (message: string, type: 'warning' | 'error' = 'warning') => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToast({ message, type });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null);
+    }, 4500);
+  };
 
   // Handle Drag & Drop
   const handleDragOver = (e: React.DragEvent) => {
@@ -33,6 +68,12 @@ export function App() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+
+    // Throttle rapid drop spam
+    if (!dropLimiter.current.allowDrop()) {
+      showToast('Drop rate limit active: Please wait a moment between file uploads.', 'warning');
+      return;
+    }
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
@@ -77,8 +118,18 @@ export function App() {
     }, 0);
   };
 
-  // Export to PDF
+  // Export to PDF with Token Bucket Rate Limiter
   const handleExportPdf = () => {
+    const result = pdfLimiter.current.tryConsume();
+    if (!result.allowed) {
+      setPdfCooldown(result.cooldownRemainingSeconds);
+      showToast(
+        `Rate limit active: Please wait ${result.cooldownRemainingSeconds}s before exporting again.`,
+        'warning'
+      );
+      return;
+    }
+
     const originalTitle = document.title;
     document.title = fileName.replace(/\.[^/.]+$/, '') + '.pdf';
     window.print();
@@ -151,14 +202,24 @@ export function App() {
             📂 Open File
           </button>
 
-          {/* Export to PDF */}
-          <button
-            className="btn btn-primary"
-            onClick={handleExportPdf}
-            title="Export clean publication-grade PDF without headers (mdtopdf.pro style)"
-          >
-            📥 Export PDF
-          </button>
+          {/* Export to PDF with Rate-Limiting Protection */}
+          {pdfCooldown > 0 ? (
+            <button
+              className="btn btn-cooldown"
+              disabled
+              title={`Rate limit active. Please wait ${pdfCooldown} seconds.`}
+            >
+              ⏳ Cooldown <span className="cooldown-badge">{pdfCooldown}s</span>
+            </button>
+          ) : (
+            <button
+              className="btn btn-primary"
+              onClick={handleExportPdf}
+              title="Export clean publication-grade PDF without headers (mdtopdf.pro style)"
+            >
+              📥 Export PDF
+            </button>
+          )}
         </div>
       </header>
 
@@ -225,6 +286,19 @@ export function App() {
           </div>
         )}
       </main>
+
+      {/* Floating Toast Notification Container */}
+      {toast && (
+        <div className="toast-container">
+          <div className={`toast-alert ${toast.type || ''}`}>
+            <div className="toast-content">
+              <span>⚠️</span>
+              <span>{toast.message}</span>
+            </div>
+            <button className="toast-close" onClick={() => setToast(null)}>✕</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

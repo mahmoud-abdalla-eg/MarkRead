@@ -19,7 +19,7 @@
 
 ## 📖 Overview
 
-**MarkRead** is a modern Markdown reading and rendering suite created by [Mahmoud Abdalla](https://github.com/mahmoud-abdalla-eg). 
+**MarkRead** is a modern Markdown reading and rendering suite. 
 
 It provides both:
 1. **MarkRead Desktop**: A native Windows application written in **C# .NET 8 WPF** with **Microsoft WebView2** and **Markdig**, delivering book-grade reading typography, tabbed document navigation, publication PDF export, and native Windows Explorer right-click integration.
@@ -166,5 +166,5 @@ See full terms in the [LICENSE](./LICENSE) file.
 ---
 
 <div align="center">
-Developed by <b>Mahmoud Abdalla</b> &bull; Built with passion for clean reading.
+Developed by <b>Mahmoud Abdalla</b>
 </div>
