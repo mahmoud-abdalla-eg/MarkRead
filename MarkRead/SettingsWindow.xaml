@@ -1,0 +1,453 @@
+<Window x:Class="MarkRead.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Settings - MarkRead"
+        Height="620" Width="760"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#09090B"
+        Foreground="#F4F4F5"
+        FontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif">
+
+    <Window.Resources>
+        <!-- Nav Button Style -->
+        <Style x:Key="NavButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#A1A1AA"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="NavBorder" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="NavBorder" Property="Background" Value="#18181B"/>
+                                <Setter Property="Foreground" Value="#F4F4F5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Active Nav Button Style -->
+        <Style x:Key="ActiveNavButtonStyle" TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+            <Setter Property="Background" Value="#18181B"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <!-- Action Button Style (Dark outline) -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#18181B"/>
+            <Setter Property="Foreground" Value="#F4F4F5"/>
+            <Setter Property="BorderBrush" Value="#27272A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#27272A"/>
+                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#3F3F46"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#3F3F46"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Danger Button Style -->
+        <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+            <Setter Property="Foreground" Value="#F87171"/>
+            <Setter Property="BorderBrush" Value="#7F1D1D"/>
+        </Style>
+
+        <!-- Primary High-Contrast Button Style (mdtopdf.pro style) -->
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#FAFAFA"/>
+            <Setter Property="Foreground" Value="#09090B"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#E4E4E7"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#D4D4D8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Dark RadioButton Style -->
+        <Style x:Key="DarkRadioButtonStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#D4D4D8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="0,4,16,4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Top Window Bar -->
+            <RowDefinition Height="Auto"/>
+            <!-- Main Content (Sidebar + Panels) -->
+            <RowDefinition Height="*"/>
+            <!-- Bottom Action Bar -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#09090B" BorderBrush="#27272A" BorderThickness="0,0,0,1" Padding="20,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="24" Height="24" CornerRadius="5" Background="#18181B" BorderBrush="#27272A" BorderThickness="1" Margin="0,0,10,0">
+                            <TextBlock Text="⚙️" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Settings" Foreground="#FAFAFA" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="Manage reader appearance, document width, and Windows integration" Foreground="#A1A1AA" FontSize="12" Margin="34,4,0,0"/>
+                </StackPanel>
+
+                <Button Grid.Column="1" Style="{StaticResource ActionButtonStyle}" Content="✕" Padding="8,4" Click="BtnClose_Click" ToolTip="Close Settings"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <!-- Sidebar Nav -->
+                <ColumnDefinition Width="200"/>
+                <!-- Page Content Area -->
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Sidebar -->
+            <Border Grid.Column="0" Background="#121215" BorderBrush="#27272A" BorderThickness="0,0,1,0" Padding="12,16">
+                <StackPanel>
+                    <Button x:Name="NavAppearance" Style="{StaticResource ActiveNavButtonStyle}" Click="Nav_Click" Tag="Appearance">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🎨 " FontSize="14"/>
+                            <TextBlock Text="Appearance"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="NavIntegration" Style="{StaticResource NavButtonStyle}" Click="Nav_Click" Tag="Integration">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🪟 " FontSize="14"/>
+                            <TextBlock Text="Windows Shell"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="NavPdf" Style="{StaticResource NavButtonStyle}" Click="Nav_Click" Tag="Pdf">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📄 " FontSize="14"/>
+                            <TextBlock Text="PDF Export"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="NavAbout" Style="{StaticResource NavButtonStyle}" Click="Nav_Click" Tag="About">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⌨️ " FontSize="14"/>
+                            <TextBlock Text="Shortcuts &amp; Info"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <!-- Content Area ScrollViewer -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="24,18">
+                <Grid>
+                    <!-- Panel 1: Appearance -->
+                    <StackPanel x:Name="PanelAppearance" Visibility="Visible">
+                        <TextBlock Text="Viewer Appearance" Foreground="#FAFAFA" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,16"/>
+
+                        <!-- Theme Selection Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Color Theme" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+                                <TextBlock Text="Select your visual preference. Dark mode matches mdtopdf.pro." Foreground="#71717A" FontSize="12" Margin="0,0,0,12"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="RadioThemeDark" Style="{StaticResource DarkRadioButtonStyle}" Content="🌙 Dark (mdtopdf zinc)" IsChecked="True" Checked="ThemeOption_Changed"/>
+                                    <RadioButton x:Name="RadioThemeLight" Style="{StaticResource DarkRadioButtonStyle}" Content="☀️ Light" Checked="ThemeOption_Changed"/>
+                                    <RadioButton x:Name="RadioThemeSystem" Style="{StaticResource DarkRadioButtonStyle}" Content="💻 System Auto" Checked="ThemeOption_Changed"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Font Size Selection Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Base Reading Font Size" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+                                <TextBlock Text="Adjust body text size for optimal readability." Foreground="#71717A" FontSize="12" Margin="0,0,0,12"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="RadioFont14" Style="{StaticResource DarkRadioButtonStyle}" Content="14px (Compact)" Checked="FontOption_Changed"/>
+                                    <RadioButton x:Name="RadioFont16" Style="{StaticResource DarkRadioButtonStyle}" Content="16px (Standard)" IsChecked="True" Checked="FontOption_Changed"/>
+                                    <RadioButton x:Name="RadioFont18" Style="{StaticResource DarkRadioButtonStyle}" Content="18px (Large)" Checked="FontOption_Changed"/>
+                                    <RadioButton x:Name="RadioFont20" Style="{StaticResource DarkRadioButtonStyle}" Content="20px (X-Large)" Checked="FontOption_Changed"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Reading Width Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Document Reading Width" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+                                <TextBlock Text="Constrain column width for comfortable line length or expand to full." Foreground="#71717A" FontSize="12" Margin="0,0,0,12"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="RadioWidth720" Style="{StaticResource DarkRadioButtonStyle}" Content="720px (Narrow)" Checked="WidthOption_Changed"/>
+                                    <RadioButton x:Name="RadioWidth860" Style="{StaticResource DarkRadioButtonStyle}" Content="860px (Standard)" IsChecked="True" Checked="WidthOption_Changed"/>
+                                    <RadioButton x:Name="RadioWidth1080" Style="{StaticResource DarkRadioButtonStyle}" Content="1080px (Wide)" Checked="WidthOption_Changed"/>
+                                    <RadioButton x:Name="RadioWidthFull" Style="{StaticResource DarkRadioButtonStyle}" Content="100% (Full Width)" Checked="WidthOption_Changed"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Default View Mode Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Default Document Mode" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+                                <TextBlock Text="Choose how new documents open initially." Foreground="#71717A" FontSize="12" Margin="0,0,0,12"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="RadioViewRendered" Style="{StaticResource DarkRadioButtonStyle}" Content="📖 Rendered Markdown" IsChecked="True" Checked="DefaultViewOption_Changed"/>
+                                    <RadioButton x:Name="RadioViewRaw" Style="{StaticResource DarkRadioButtonStyle}" Content="📄 Raw Text" Checked="DefaultViewOption_Changed"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Panel 2: Windows Integration -->
+                    <StackPanel x:Name="PanelIntegration" Visibility="Collapsed">
+                        <TextBlock Text="Windows Explorer Integration" Foreground="#FAFAFA" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <TextBlock Text="Configure right-click menus, double-click file associations, and desktop shortcuts." Foreground="#A1A1AA" FontSize="12" Margin="0,0,0,16"/>
+
+                        <!-- Action Feedback Banner -->
+                        <Border x:Name="StatusBanner" Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,0,0,14" Visibility="Collapsed">
+                            <TextBlock x:Name="TxtStatusBanner" Text="Action completed." Foreground="#34D399" FontSize="12" FontWeight="Medium"/>
+                        </Border>
+
+                        <!-- Context Menu Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                                    <TextBlock Text="Right-Click 'Open with MarkRead'" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+                                    <TextBlock Text="Adds a convenient 'Open with MarkRead' item to Windows Explorer context menu for all .md and .markdown files." 
+                                               Foreground="#71717A" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Style="{StaticResource ActionButtonStyle}" Content="Add Context Menu" Click="BtnRegisterContextMenu_Click" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Default App Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                                    <TextBlock Text="Set as Default .md Viewer" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+                                    <TextBlock Text="Registers MarkRead and opens the Windows Default Apps dialog so double-clicking any .md file opens it in MarkRead." 
+                                               Foreground="#71717A" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Style="{StaticResource ActionButtonStyle}" Content="Set as Default" Click="BtnSetDefault_Click" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Desktop Shortcut Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                                    <TextBlock Text="Desktop Shortcut" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+                                    <TextBlock Text="Creates a shortcut on your Desktop for easy launch and dragging files directly onto it." 
+                                               Foreground="#71717A" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Style="{StaticResource ActionButtonStyle}" Content="Create Shortcut" Click="BtnCreateShortcut_Click" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Clean up / Unregister Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                                    <TextBlock Text="Unregister &amp; Clean Registry" Foreground="#F87171" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+                                    <TextBlock Text="Removes all file associations and Explorer context menu entries created by MarkRead." 
+                                               Foreground="#71717A" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Style="{StaticResource DangerButtonStyle}" Content="Unregister All" Click="BtnUnregister_Click" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Panel 3: PDF Export -->
+                    <StackPanel x:Name="PanelPdf" Visibility="Collapsed">
+                        <TextBlock Text="PDF Export Preferences" Foreground="#FAFAFA" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <TextBlock Text="Configure publication-grade PDF generation defaults." Foreground="#A1A1AA" FontSize="12" Margin="0,0,0,16"/>
+
+                        <!-- Orientation Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Page Orientation" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+                                <TextBlock Text="Default page layout for PDF exports." Foreground="#71717A" FontSize="12" Margin="0,0,0,12"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="RadioPdfPortrait" Style="{StaticResource DarkRadioButtonStyle}" Content="📄 Portrait" IsChecked="True" Checked="PdfOrientation_Changed"/>
+                                    <RadioButton x:Name="RadioPdfLandscape" Style="{StaticResource DarkRadioButtonStyle}" Content="📃 Landscape" Checked="PdfOrientation_Changed"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Margins Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Page Margins" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+                                <TextBlock Text="Controls printable border space around pages." Foreground="#71717A" FontSize="12" Margin="0,0,0,12"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="RadioMarginCompact" Style="{StaticResource DarkRadioButtonStyle}" Content="Compact (0.2 in / 5mm)" Checked="PdfMargin_Changed"/>
+                                    <RadioButton x:Name="RadioMarginStandard" Style="{StaticResource DarkRadioButtonStyle}" Content="Standard (0.4 in / 10mm)" IsChecked="True" Checked="PdfMargin_Changed"/>
+                                    <RadioButton x:Name="RadioMarginSpacious" Style="{StaticResource DarkRadioButtonStyle}" Content="Spacious (0.8 in / 20mm)" Checked="PdfMargin_Changed"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Panel 4: Shortcuts & Info -->
+                    <StackPanel x:Name="PanelAbout" Visibility="Collapsed">
+                        <TextBlock Text="Keyboard Shortcuts &amp; Reference" Foreground="#FAFAFA" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,16"/>
+
+                        <!-- Shortcuts Table Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Row 0 -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Ctrl + O" Foreground="#FAFAFA" FontWeight="SemiBold" Margin="0,4"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="Open Markdown document(s)" Foreground="#A1A1AA" Margin="0,4"/>
+
+                                <!-- Row 1 -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Ctrl + T" Foreground="#FAFAFA" FontWeight="SemiBold" Margin="0,4"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="New tab / open document" Foreground="#A1A1AA" Margin="0,4"/>
+
+                                <!-- Row 2 -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Ctrl + W" Foreground="#FAFAFA" FontWeight="SemiBold" Margin="0,4"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="Close active document tab" Foreground="#A1A1AA" Margin="0,4"/>
+
+                                <!-- Row 3 -->
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Ctrl + U" Foreground="#FAFAFA" FontWeight="SemiBold" Margin="0,4"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="Toggle Raw Text / Rendered Markdown" Foreground="#A1A1AA" Margin="0,4"/>
+
+                                <!-- Row 4 -->
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Ctrl + P" Foreground="#FAFAFA" FontWeight="SemiBold" Margin="0,4"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="Export clean PDF document" Foreground="#A1A1AA" Margin="0,4"/>
+
+                                <!-- Row 5 -->
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Ctrl + F" Foreground="#FAFAFA" FontWeight="SemiBold" Margin="0,4"/>
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="Find in active document" Foreground="#A1A1AA" Margin="0,4"/>
+
+                                <!-- Row 6 -->
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="F5" Foreground="#FAFAFA" FontWeight="SemiBold" Margin="0,4"/>
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="Reload active file from disk (preserves scroll)" Foreground="#A1A1AA" Margin="0,4"/>
+
+                                <!-- Row 7 -->
+                                <TextBlock Grid.Row="7" Grid.Column="0" Text="Ctrl + Q" Foreground="#FAFAFA" FontWeight="SemiBold" Margin="0,4"/>
+                                <TextBlock Grid.Row="7" Grid.Column="1" Text="Quit MarkRead completely" Foreground="#A1A1AA" Margin="0,4"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- About Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="About MarkRead" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6"/>
+                                <TextBlock Text="Version 1.0.0 — Modern High-Performance Markdown Document Reader for Windows." Foreground="#A1A1AA" FontSize="12" Margin="0,0,0,4"/>
+                                <TextBlock Text="Inspired by mdtopdf.pro dark theme aesthetics. Powered by .NET 8, Microsoft WebView2, and Markdig." Foreground="#71717A" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Bottom Action Bar -->
+        <Border Grid.Row="2" Background="#09090B" BorderBrush="#27272A" BorderThickness="0,1,0,0" Padding="20,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="Settings are saved automatically" Foreground="#71717A" FontSize="12" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Style="{StaticResource PrimaryButtonStyle}" Content="Done" Click="BtnDone_Click" MinWidth="90"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
