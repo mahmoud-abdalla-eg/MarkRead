@@ -2,18 +2,46 @@ import React, { useState, useEffect, useRef } from 'react';
 import { parseMarkdown } from './lib/markdown';
 import { SAMPLE_MARKDOWN } from './lib/sampleMarkdown';
 import { TokenBucketLimiter, DropThrottler } from './lib/rateLimiter';
+import html2pdf from 'html2pdf.js';
 import './App.css';
 
+const STORAGE_KEY_MD = 'markread_draft_content';
+const STORAGE_KEY_FILENAME = 'markread_draft_filename';
+const STORAGE_KEY_THEME = 'markread_reader_theme';
+const STORAGE_KEY_DARK = 'markread_dark_mode';
+const STORAGE_KEY_VIEW = 'markread_view_mode';
+
 export function App() {
-  const [markdown, setMarkdown] = useState<string>(SAMPLE_MARKDOWN);
-  const [theme, setTheme] = useState<'modern' | 'github' | 'academic'>('modern');
-  const [isDark, setIsDark] = useState<boolean>(true);
+  // State with LocalStorage Persistence
+  const [markdown, setMarkdown] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_KEY_MD) || SAMPLE_MARKDOWN;
+  });
+  const [theme, setTheme] = useState<'modern' | 'github' | 'academic'>(() => {
+    return (localStorage.getItem(STORAGE_KEY_THEME) as any) || 'modern';
+  });
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_DARK);
+    return saved !== null ? saved === 'true' : true;
+  });
+  const [viewMode, setViewMode] = useState<'split' | 'reader' | 'editor'>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) return 'reader';
+    return (localStorage.getItem(STORAGE_KEY_VIEW) as any) || 'split';
+  });
+  const [fileName, setFileName] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_KEY_FILENAME) || 'EXPLANATION_FOR_YOU.md';
+  });
+
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [fileName, setFileName] = useState<string>('EXPLANATION_FOR_YOU.md');
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
 
   // Rate Limiting States
   const [pdfCooldown, setPdfCooldown] = useState<number>(0);
   const [toast, setToast] = useState<{ message: string; type?: 'warning' | 'error' } | null>(null);
+
+  // Undo / Redo History Stack
+  const [history, setHistory] = useState<string[]>([markdown]);
+  const [historyIndex, setHistoryIndex] = useState<number>(0);
+  const debounceTimerRef = useRef<any>(null);
 
   const pdfLimiter = useRef(new TokenBucketLimiter(3, 5000, 15));
   const dropLimiter = useRef(new DropThrottler(3, 5000));
@@ -25,7 +53,39 @@ export function App() {
   // Sync color mode attribute
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    localStorage.setItem(STORAGE_KEY_DARK, String(isDark));
   }, [isDark]);
+
+  // Persist Markdown Draft
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_MD, markdown);
+  }, [markdown]);
+
+  // Persist File Name
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_FILENAME, fileName);
+  }, [fileName]);
+
+  // Persist Reader Theme
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_THEME, theme);
+  }, [theme]);
+
+  // Persist View Mode
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_VIEW, viewMode);
+  }, [viewMode]);
+
+  // Handle Mobile Screen Resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setViewMode((current) => (current === 'split' ? 'reader' : current));
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Cooldown countdown timer
   useEffect(() => {
@@ -50,6 +110,74 @@ export function App() {
     toastTimeoutRef.current = setTimeout(() => {
       setToast(null);
     }, 4500);
+  };
+
+  // Push new state into history
+  const pushHistory = (newText: string, immediate: boolean = false) => {
+    if (immediate) {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      setHistory((prev) => {
+        const sliced = prev.slice(0, historyIndex + 1);
+        if (sliced.length >= 100) sliced.shift();
+        return [...sliced, newText];
+      });
+      setHistoryIndex((prev) => prev + 1);
+    } else {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        setHistory((prev) => {
+          const sliced = prev.slice(0, historyIndex + 1);
+          if (sliced.length >= 100) sliced.shift();
+          return [...sliced, newText];
+        });
+        setHistoryIndex((prev) => prev + 1);
+      }, 350);
+    }
+  };
+
+  // Undo Action
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const targetIndex = historyIndex - 1;
+      setHistoryIndex(targetIndex);
+      setMarkdown(history[targetIndex]);
+    }
+  };
+
+  // Redo Action
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const targetIndex = historyIndex + 1;
+      setHistoryIndex(targetIndex);
+      setMarkdown(history[targetIndex]);
+    }
+  };
+
+  // Textarea input change
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setMarkdown(val);
+    pushHistory(val, false);
+  };
+
+  // Keyboard Shortcuts: Ctrl+Z (Undo) and Ctrl+Y / Ctrl+Shift+Z (Redo)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Ctrl+Z or Cmd+Z (Undo)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      handleUndo();
+      return;
+    }
+
+    // Redo: Ctrl+Y, Cmd+Y, or Ctrl+Shift+Z, Cmd+Shift+Z
+    if (
+      ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') ||
+      ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z')
+    ) {
+      e.preventDefault();
+      handleRedo();
+      return;
+    }
   };
 
   // Handle Drag & Drop
@@ -92,8 +220,10 @@ export function App() {
     const reader = new FileReader();
     reader.onload = (event) => {
       if (typeof event.target?.result === 'string') {
-        setMarkdown(event.target.result);
+        const content = event.target.result;
+        setMarkdown(content);
         setFileName(file.name);
+        pushHistory(content, true);
       }
     };
     reader.readAsText(file);
@@ -111,6 +241,7 @@ export function App() {
     const nextValue =
       textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
     setMarkdown(nextValue);
+    pushHistory(nextValue, true);
 
     setTimeout(() => {
       textarea.focus();
@@ -118,8 +249,8 @@ export function App() {
     }, 0);
   };
 
-  // Export to PDF with Token Bucket Rate Limiter
-  const handleExportPdf = () => {
+  // Export to PDF with Token Bucket Rate Limiter & Direct Browser Download
+  const handleExportPdf = async () => {
     const result = pdfLimiter.current.tryConsume();
     if (!result.allowed) {
       setPdfCooldown(result.cooldownRemainingSeconds);
@@ -130,10 +261,51 @@ export function App() {
       return;
     }
 
-    const originalTitle = document.title;
-    document.title = fileName.replace(/\.[^/.]+$/, '') + '.pdf';
-    window.print();
-    document.title = originalTitle;
+    setIsGeneratingPdf(true);
+    showToast('Generating and downloading PDF file...', 'warning');
+
+    const targetFileName = fileName.replace(/\.[^/.]+$/, '') + '.pdf';
+
+    try {
+      // Create isolated export container with clean A4 print styles
+      const exportContainer = document.createElement('div');
+      exportContainer.className = `pdf-export-container theme-${theme}`;
+      exportContainer.innerHTML = htmlContent;
+      document.body.appendChild(exportContainer);
+
+      const opt = {
+        margin: [12, 14, 12, 14] as [number, number, number, number],
+        filename: targetFileName,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait' as const,
+        },
+        pagebreak: {
+          mode: ['avoid-all', 'css', 'legacy'],
+          avoid: ['tr', 'pre', 'blockquote', 'img', 'h1', 'h2', 'h3'],
+        },
+      };
+
+      // Generate and trigger an authentic browser file download!
+      // This registers in Chrome's Download Tray and chrome://downloads tab!
+      await html2pdf().set(opt).from(exportContainer).save();
+      document.body.removeChild(exportContainer);
+      showToast(`Downloaded "${targetFileName}" — check Chrome Downloads!`, 'warning');
+    } catch (err: any) {
+      console.error('PDF direct download error, falling back to print dialog:', err);
+      showToast('Downloading via print fallback...', 'warning');
+      window.print();
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const htmlContent = parseMarkdown(markdown);
@@ -153,6 +325,34 @@ export function App() {
         </div>
 
         <div className="header-actions">
+          {/* View Mode Segmented Control */}
+          <div className="segmented-control">
+            <button
+              className={`seg-btn ${viewMode === 'split' ? 'active' : ''}`}
+              onClick={() => setViewMode('split')}
+              data-mode="split"
+              title="Side-by-side Editor & Preview"
+            >
+              ◫ Split
+            </button>
+            <button
+              className={`seg-btn ${viewMode === 'reader' ? 'active' : ''}`}
+              onClick={() => setViewMode('reader')}
+              data-mode="reader"
+              title="Full-width Reading Mode"
+            >
+              📖 Reader
+            </button>
+            <button
+              className={`seg-btn ${viewMode === 'editor' ? 'active' : ''}`}
+              onClick={() => setViewMode('editor')}
+              data-mode="editor"
+              title="Full-width Editor Mode"
+            >
+              ✏️ Editor
+            </button>
+          </div>
+
           {/* Theme Selector */}
           <select
             className="select-input"
@@ -180,6 +380,7 @@ export function App() {
             onClick={() => {
               setMarkdown(SAMPLE_MARKDOWN);
               setFileName('Antispam_Case_Review.md');
+              pushHistory(SAMPLE_MARKDOWN, true);
             }}
             title="Load comprehensive markdown demo"
           >
@@ -202,8 +403,12 @@ export function App() {
             📂 Open File
           </button>
 
-          {/* Export to PDF with Rate-Limiting Protection */}
-          {pdfCooldown > 0 ? (
+          {/* Export to PDF with Rate-Limiting Protection & Direct Browser Download */}
+          {isGeneratingPdf ? (
+            <button className="btn btn-cooldown" disabled title="Generating and preparing PDF download...">
+              ⏳ Generating...
+            </button>
+          ) : pdfCooldown > 0 ? (
             <button
               className="btn btn-cooldown"
               disabled
@@ -215,9 +420,9 @@ export function App() {
             <button
               className="btn btn-primary"
               onClick={handleExportPdf}
-              title="Export clean publication-grade PDF without headers (mdtopdf.pro style)"
+              title="Generate and download clean publication-grade PDF directly into Chrome downloads"
             >
-              📥 Export PDF
+              📥 Download PDF
             </button>
           )}
         </div>
@@ -231,12 +436,33 @@ export function App() {
       </div>
 
       {/* Main Workspace: Split Editor & Preview */}
-      <main className="workspace">
+      <main className={`workspace mode-${viewMode}`}>
         {/* Left: Editor */}
         <section className="editor-panel">
           <div className="panel-header">
             <span className="panel-title">Editor ({fileName})</span>
             <div className="editor-toolbar">
+              {/* Undo / Redo buttons */}
+              <button
+                className="tool-btn"
+                onClick={handleUndo}
+                disabled={historyIndex <= 0}
+                style={{ opacity: historyIndex <= 0 ? 0.4 : 1 }}
+                title="Undo edit (Ctrl+Z)"
+              >
+                ↩ Undo
+              </button>
+              <button
+                className="tool-btn"
+                onClick={handleRedo}
+                disabled={historyIndex >= history.length - 1}
+                style={{ opacity: historyIndex >= history.length - 1 ? 0.4 : 1 }}
+                title="Redo edit (Ctrl+Y or Ctrl+Shift+Z)"
+              >
+                ↪ Redo
+              </button>
+
+              {/* Formatting tools */}
               <button className="tool-btn" onClick={() => insertFormat('**', '**')} title="Bold">B</button>
               <button className="tool-btn" onClick={() => insertFormat('*', '*')} title="Italic">I</button>
               <button className="tool-btn" onClick={() => insertFormat('## ')} title="Heading 2">H2</button>
@@ -255,7 +481,8 @@ export function App() {
             ref={textareaRef}
             className="editor-textarea"
             value={markdown}
-            onChange={(e) => setMarkdown(e.target.value)}
+            onChange={handleTextareaChange}
+            onKeyDown={handleKeyDown}
             placeholder="Type or paste your Markdown content here..."
             spellCheck="false"
           />

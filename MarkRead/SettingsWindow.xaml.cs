@@ -106,6 +106,8 @@ public partial class SettingsWindow : Window
                 RadioMarginStandard.IsChecked = true;
                 break;
         }
+
+        UpdateIntegrationStatusUI();
     }
 
     // Sidebar navigation
@@ -118,6 +120,11 @@ public partial class SettingsWindow : Window
         PanelIntegration.Visibility = tag == "Integration" ? Visibility.Visible : Visibility.Collapsed;
         PanelPdf.Visibility = tag == "Pdf" ? Visibility.Visible : Visibility.Collapsed;
         PanelAbout.Visibility = tag == "About" ? Visibility.Visible : Visibility.Collapsed;
+
+        if (tag == "Integration")
+        {
+            UpdateIntegrationStatusUI();
+        }
 
         // Reset nav button styles
         var defaultStyle = (Style)FindResource("NavButtonStyle");
@@ -193,18 +200,68 @@ public partial class SettingsWindow : Window
         SaveAndNotify();
     }
 
-    // Windows Shell Integration
-    private void BtnRegisterContextMenu_Click(object sender, RoutedEventArgs e)
+    private void UpdateIntegrationStatusUI()
     {
-        bool success = ShellIntegration.RegisterFileAssociations();
-        ShowStatus(success 
-            ? "✓ Successfully added 'Open with MarkRead' to Windows Explorer context menu." 
-            : "⚠️ Failed to register context menu. Try running as Administrator.", success);
+        bool fileRegistered = ShellIntegration.IsFileContextMenuRegistered();
+        TxtFileMenuStatus.Text = fileRegistered ? "✓ Enabled" : "Not added";
+        TxtFileMenuStatus.Foreground = fileRegistered 
+            ? new SolidColorBrush(Color.FromRgb(52, 211, 153)) 
+            : new SolidColorBrush(Color.FromRgb(161, 161, 170));
+        BtnFileMenu.Content = fileRegistered ? "Remove" : "Add to Menu";
+
+        bool dirRegistered = ShellIntegration.IsDirectoryContextMenuRegistered();
+        TxtDirMenuStatus.Text = dirRegistered ? "✓ Enabled" : "Not added";
+        TxtDirMenuStatus.Foreground = dirRegistered 
+            ? new SolidColorBrush(Color.FromRgb(52, 211, 153)) 
+            : new SolidColorBrush(Color.FromRgb(161, 161, 170));
+        BtnDirMenu.Content = dirRegistered ? "Remove" : "Add to Menu";
+
+        bool win11Direct = ShellIntegration.IsClassicContextMenuEnabled();
+        TxtWin11MenuStatus.Text = win11Direct ? "✓ Direct Menu Active" : "Behind 'Show more options'";
+        TxtWin11MenuStatus.Foreground = win11Direct 
+            ? new SolidColorBrush(Color.FromRgb(52, 211, 153)) 
+            : new SolidColorBrush(Color.FromRgb(161, 161, 170));
+        BtnToggleWin11Menu.Content = win11Direct ? "Restore Win 11 Menu" : "Show Directly";
+    }
+
+    // Windows Shell Integration
+    private void BtnToggleFileContextMenu_Click(object sender, RoutedEventArgs e)
+    {
+        bool isCurrentlyRegistered = ShellIntegration.IsFileContextMenuRegistered();
+        ShellIntegration.SetFileContextMenu(!isCurrentlyRegistered);
+        UpdateIntegrationStatusUI();
+
+        ShowStatus(!isCurrentlyRegistered 
+            ? "✓ Successfully added 'Open with MarkRead' to file context menu." 
+            : "✓ Removed 'Open with MarkRead' from file context menu.", true);
+    }
+
+    private void BtnToggleDirectoryContextMenu_Click(object sender, RoutedEventArgs e)
+    {
+        bool isCurrentlyRegistered = ShellIntegration.IsDirectoryContextMenuRegistered();
+        ShellIntegration.SetDirectoryContextMenu(!isCurrentlyRegistered);
+        UpdateIntegrationStatusUI();
+
+        ShowStatus(!isCurrentlyRegistered 
+            ? "✓ Successfully added 'Open with MarkRead' to directory context menu." 
+            : "✓ Removed 'Open with MarkRead' from directory context menu.", true);
+    }
+
+    private void BtnToggleWin11Menu_Click(object sender, RoutedEventArgs e)
+    {
+        bool isEnabled = ShellIntegration.IsClassicContextMenuEnabled();
+        ShellIntegration.SetClassicContextMenu(!isEnabled);
+        UpdateIntegrationStatusUI();
+
+        ShowStatus(!isEnabled 
+            ? "✓ Direct Right-Click Menu enabled! 'Open with MarkRead' will now appear directly on first right-click." 
+            : "✓ Modern Windows 11 context menu restored.", true);
     }
 
     private void BtnSetDefault_Click(object sender, RoutedEventArgs e)
     {
         ShellIntegration.PromptSetAsDefault();
+        UpdateIntegrationStatusUI();
         ShowStatus("✓ Opened Windows Default Apps dialog. Select MarkRead as default for .md files.", true);
     }
 
@@ -225,6 +282,7 @@ public partial class SettingsWindow : Window
         if (result == MessageBoxResult.Yes)
         {
             bool success = ShellIntegration.UnregisterFileAssociations();
+            UpdateIntegrationStatusUI();
             ShowStatus(success 
                 ? "✓ All MarkRead associations and context menus cleanly removed." 
                 : "⚠️ Could not completely remove all entries.", success);

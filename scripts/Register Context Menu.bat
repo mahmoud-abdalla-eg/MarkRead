@@ -34,7 +34,8 @@ echo ===================================================
 echo   Registration Complete!
 echo ===================================================
 echo.
-echo * Right-click any .md file to see "Open with MarkRead"
+echo * File Context Menu: Right-click any .md file to see "Open with MarkRead"
+echo * Directory Context Menu: Right-click any folder or empty space to see "Open with MarkRead"
 echo * A "MarkRead" shortcut has been created on your Desktop
 echo * To pin to Taskbar: Right-click the Desktop shortcut and click "Pin to taskbar"
 echo.

@@ -51,6 +51,20 @@ public partial class App : Application
             return;
         }
 
+        if (e.Args.Contains("--register-directory", StringComparer.OrdinalIgnoreCase))
+        {
+            ShellIntegration.SetDirectoryContextMenu(true);
+            Environment.Exit(0);
+            return;
+        }
+
+        if (e.Args.Contains("--unregister-directory", StringComparer.OrdinalIgnoreCase))
+        {
+            ShellIntegration.SetDirectoryContextMenu(false);
+            Environment.Exit(0);
+            return;
+        }
+
         var currentProc = Process.GetCurrentProcess();
         var otherInstances = Process.GetProcessesByName(currentProc.ProcessName)
                                     .Where(p => p.Id != currentProc.Id)
@@ -81,15 +95,12 @@ public partial class App : Application
         _mainWindow = new MainWindow();
         _mainWindow.Show();
 
-        // Initial file argument handling
+        // Initial file or folder argument handling
         if (e.Args.Length > 0)
         {
             foreach (var arg in e.Args)
             {
-                if (File.Exists(arg))
-                {
-                    _mainWindow.OpenFile(arg);
-                }
+                _mainWindow.OpenTarget(arg);
             }
         }
     }
@@ -128,10 +139,7 @@ public partial class App : Application
                                     BringWindowToFront();
                                     foreach (var file in files)
                                     {
-                                        if (File.Exists(file))
-                                        {
-                                            _mainWindow?.OpenFile(file);
-                                        }
+                                        _mainWindow?.OpenTarget(file);
                                     }
                                 });
                             }

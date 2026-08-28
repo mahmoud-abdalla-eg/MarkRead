@@ -6,3 +6,15 @@ html, body, #root {
   padding: 0;
   overflow: hidden;
 }
+
+@media print {
+  html, body, #root {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    display: block !important;
+  }
+}

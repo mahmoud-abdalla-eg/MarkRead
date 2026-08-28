@@ -1,0 +1,196 @@
+<Window x:Class="MarkRead.IntegrationSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Windows Integration Settings - MarkRead"
+        Height="470" Width="620"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Background="#0F172A"
+        Foreground="#F8FAFC">
+
+    <Window.Resources>
+        <!-- Primary Button Style -->
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="16,9"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#1D4ED8"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#1E40AF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Secondary Button Style -->
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#334155"/>
+                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#475569"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Danger Button Style -->
+        <Style x:Key="DangerButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#F87171"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#7F1D1D"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#991B1B"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Integration CheckBox Style -->
+        <Style x:Key="IntegrationCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Header -->
+            <RowDefinition Height="Auto"/>
+            <!-- Checkbox List -->
+            <RowDefinition Height="*"/>
+            <!-- Bottom Action Controls -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#0B0F19" BorderBrush="#1E293B" BorderThickness="0,0,0,1" Padding="24,18">
+            <StackPanel Orientation="Horizontal">
+                <Border Width="38" Height="38" CornerRadius="8" Background="#2563EB" Margin="0,0,14,0" VerticalAlignment="Center">
+                    <TextBlock Text="⚙️" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Windows Explorer Integration" FontWeight="Bold" FontSize="17" Foreground="#F8FAFC"/>
+                    <TextBlock Text="Configure right-click context menu actions and file associations" Foreground="#94A3B8" FontSize="12" Margin="0,2,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Checkbox Options Area -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,18">
+            <StackPanel>
+                <!-- Option 1: File Context Menu -->
+                <Border Background="#1E293B" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkFileContextMenu" Style="{StaticResource IntegrationCheckBoxStyle}"
+                                  Content="Add &quot;Open with MarkRead&quot; action to Windows Explorer file context menu"/>
+                        <TextBlock Text="Right-click any .md, .markdown, or text file to open it directly in MarkRead." 
+                                   Foreground="#94A3B8" FontSize="11" Margin="24,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Option 2: Directory Context Menu (Requested Feature) -->
+                <Border Background="#1E293B" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkDirectoryContextMenu" Style="{StaticResource IntegrationCheckBoxStyle}"
+                                  Content="Add &quot;Open with MarkRead&quot; action to Windows Explorer directory context menu"/>
+                        <TextBlock Text="Right-click any folder or empty folder space to open its README / Markdown documents." 
+                                   Foreground="#94A3B8" FontSize="11" Margin="24,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Option 3: Default Viewer -->
+                <Border Background="#1E293B" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkDefaultViewer" Style="{StaticResource IntegrationCheckBoxStyle}"
+                                  Content="Set MarkRead as default application for Markdown files (.md, .markdown)"/>
+                        <TextBlock Text="Double-clicking .md files in Windows Explorer will open MarkRead automatically." 
+                                   Foreground="#94A3B8" FontSize="11" Margin="24,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Desktop Shortcut Notice -->
+                <TextBlock Text="💡 A desktop shortcut will also be created so you can pin MarkRead to your Windows Taskbar." 
+                           Foreground="#64748B" FontSize="11" Margin="4,4,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Bottom Action Bar -->
+        <Border Grid.Row="2" Background="#0B0F19" BorderBrush="#1E293B" BorderThickness="0,1,0,0" Padding="24,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0" Content="Remove All" Style="{StaticResource DangerButtonStyle}" Click="BtnRemoveAll_Click" ToolTip="Remove all MarkRead context menu and file associations"/>
+
+                <Button Grid.Column="2" Content="Cancel" IsCancel="True" Style="{StaticResource SecondaryButtonStyle}" Click="BtnCancel_Click" Margin="0,0,10,0" Width="80"/>
+
+                <Button Grid.Column="3" Content="Save &amp; Apply" Style="{StaticResource PrimaryButtonStyle}" Click="BtnApply_Click"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

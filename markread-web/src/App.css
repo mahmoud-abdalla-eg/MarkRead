@@ -1,31 +1,31 @@
 :root {
-  --bg-app: #f8fafc;
+  --bg-app: #f4f4f5;
   --bg-panel: #ffffff;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border-color: #e2e8f0;
-  --accent-color: #2563eb;
-  --accent-hover: #1d4ed8;
-  --code-bg: #f1f5f9;
-  --code-border: #cbd5e1;
-  --table-border: #cbd5e1;
-  --table-header: #f8fafc;
-  --table-zebra: #f8fafc;
+  --text-main: #18181b;
+  --text-muted: #71717a;
+  --border-color: #e4e4e7;
+  --accent-color: #7c3aed;
+  --accent-hover: #6d28d9;
+  --code-bg: #f4f4f5;
+  --code-border: #e4e4e7;
+  --table-border: #e4e4e7;
+  --table-header: #f4f4f5;
+  --table-zebra: #fafafa;
 }
 
 [data-theme='dark'] {
-  --bg-app: #0f172a;
-  --bg-panel: #1e293b;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --border-color: #334155;
-  --accent-color: #3b82f6;
-  --accent-hover: #60a5fa;
-  --code-bg: #0f172a;
-  --code-border: #334155;
-  --table-border: #334155;
-  --table-header: #0f172a;
-  --table-zebra: #182234;
+  --bg-app: #09090b;          /* True deep obsidian black matching mdtopdf.pro */
+  --bg-panel: #121215;        /* Neutral dark panel */
+  --text-main: #f4f4f5;       /* Crisp white */
+  --text-muted: #a1a1aa;      /* Neutral zinc gray (zero blue) */
+  --border-color: #27272a;    /* Neutral dark border */
+  --accent-color: #8b5cf6;    /* Modern vibrant violet / purple */
+  --accent-hover: #7c3aed;
+  --code-bg: #141417;         /* Deep neutral code background */
+  --code-border: #27272a;
+  --table-border: #27272a;
+  --table-header: #18181b;
+  --table-zebra: #131316;
 }
 
 * {
@@ -40,6 +40,22 @@ body {
   color: var(--text-main);
   height: 100vh;
   overflow: hidden;
+}
+
+/* Sleek Scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
 
 .app-container {
@@ -69,7 +85,7 @@ body {
 .brand-icon {
   width: 32px;
   height: 32px;
-  background: #2563eb;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
   color: #ffffff;
   border-radius: 8px;
   display: flex;
@@ -77,28 +93,30 @@ body {
   justify-content: center;
   font-weight: bold;
   font-size: 15px;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
 }
 
 .brand-title {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.5px;
+  color: var(--text-main);
 }
 
 .brand-badge {
   font-size: 11px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: rgba(139, 92, 246, 0.12);
+  color: #a78bfa;
   padding: 2px 8px;
   border-radius: 9999px;
   font-weight: 600;
-  border: 1px solid #bfdbfe;
+  border: 1px solid rgba(139, 92, 246, 0.25);
 }
 
 [data-theme='dark'] .brand-badge {
-  background: #1e3a8a;
-  color: #93c5fd;
-  border-color: #1d4ed8;
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+  border-color: rgba(139, 92, 246, 0.35);
 }
 
 .header-actions {
@@ -124,16 +142,19 @@ body {
 
 .btn:hover {
   background: var(--code-bg);
+  border-color: #3f3f46;
 }
 
 .btn-primary {
-  background: #2563eb;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   color: #ffffff;
-  border-color: #2563eb;
+  border-color: #7c3aed;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
 }
 
 .btn-primary:hover {
-  background: #1d4ed8;
+  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
+  border-color: #6d28d9;
 }
 
 .select-input {
@@ -144,13 +165,18 @@ body {
   background: var(--bg-panel);
   color: var(--text-main);
   cursor: pointer;
+  outline: none;
+}
+
+.select-input:focus {
+  border-color: var(--accent-color);
 }
 
 /* Drop Zone Banner */
 .dropzone-banner {
   background: var(--bg-panel);
   border-bottom: 1px dashed var(--border-color);
-  padding: 12px 24px;
+  padding: 11px 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -159,18 +185,54 @@ body {
 }
 
 .dropzone-banner.dragging {
-  background: #eff6ff;
-  border-color: #3b82f6;
+  background: rgba(139, 92, 246, 0.08);
+  border-color: #8b5cf6;
 }
 
 [data-theme='dark'] .dropzone-banner.dragging {
-  background: #1e3a8a;
-  border-color: #60a5fa;
+  background: rgba(139, 92, 246, 0.12);
+  border-color: #a78bfa;
 }
 
 .dropzone-text {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+/* Segmented Control for View Modes */
+.segmented-control {
+  display: inline-flex;
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.seg-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.seg-btn:hover {
+  color: var(--text-main);
+}
+
+.seg-btn.active {
+  background: var(--bg-panel);
+  color: var(--text-main);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
 }
 
 /* Main Workspace */
@@ -180,6 +242,41 @@ body {
   grid-template-columns: 1fr 1fr;
   overflow: hidden;
   position: relative;
+}
+
+.workspace.mode-reader {
+  grid-template-columns: 1fr;
+  background: var(--bg-app);
+}
+
+.workspace.mode-reader .editor-panel {
+  display: none !important;
+}
+
+.workspace.mode-reader .preview-panel {
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+}
+
+.workspace.mode-editor {
+  grid-template-columns: 1fr;
+  background: var(--bg-app);
+}
+
+.workspace.mode-editor .preview-panel {
+  display: none !important;
+}
+
+.workspace.mode-editor .editor-panel {
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+  border-right: none;
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
 }
 
 .editor-panel, .preview-panel {
@@ -394,6 +491,85 @@ body {
   background: transparent;
   padding: 0;
   border: none;
+  font-family: inherit;
+}
+
+/* Prism Syntax Highlighting Tokens (Obsidian Dark) */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #71717a;
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: #a1a1aa;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #fb923c;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #34d399;
+}
+
+.token.operator,
+.token.entity,
+.token.url {
+  color: #38bdf8;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #c084fc;
+  font-weight: 600;
+}
+
+.token.function,
+.token.class-name {
+  color: #60a5fa;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #fbbf24;
+}
+
+/* Light & PDF Export Syntax Overrides */
+[data-theme='light'] .token.comment,
+.pdf-export-container .token.comment {
+  color: #64748b !important;
+}
+[data-theme='light'] .token.keyword,
+.pdf-export-container .token.keyword {
+  color: #7c3aed !important;
+}
+[data-theme='light'] .token.string,
+.pdf-export-container .token.string {
+  color: #059669 !important;
+}
+[data-theme='light'] .token.function,
+.pdf-export-container .token.function {
+  color: #0284c7 !important;
+}
+[data-theme='light'] .token.number,
+.pdf-export-container .token.number {
+  color: #d97706 !important;
 }
 
 .copy-btn {
@@ -427,9 +603,9 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(37, 99, 235, 0.15);
-  backdrop-filter: blur(4px);
-  border: 3px dashed #2563eb;
+  background: rgba(9, 9, 11, 0.85);
+  backdrop-filter: blur(8px);
+  border: 2px dashed #8b5cf6;
   z-index: 100;
   display: flex;
   align-items: center;
@@ -440,7 +616,8 @@ body {
   background: var(--bg-panel);
   padding: 32px 48px;
   border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   text-align: center;
 }
 
@@ -531,10 +708,126 @@ body {
   }
 }
 
+/* Isolated Clean PDF Export Container for Direct Download */
+.pdf-export-container {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  width: 794px; /* A4 width at 96 DPI */
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  padding: 28px 36px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.pdf-export-container * {
+  color: #0f172a !important;
+  background-color: transparent;
+}
+
+.pdf-export-container h1,
+.pdf-export-container h2,
+.pdf-export-container h3,
+.pdf-export-container h4 {
+  color: #0f172a !important;
+  font-weight: 700;
+}
+
+.pdf-export-container h1 {
+  font-size: 24px;
+  border-bottom: 2px solid #cbd5e1;
+  padding-bottom: 6px;
+  margin-bottom: 16px;
+}
+
+.pdf-export-container h2 {
+  font-size: 18px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 4px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.pdf-export-container p {
+  margin-bottom: 10px;
+}
+
+.pdf-export-container table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 16px 0 !important;
+  border: 1px solid #cbd5e1 !important;
+  word-break: break-word !important;
+}
+
+.pdf-export-container tr {
+  page-break-inside: avoid !important;
+}
+
+.pdf-export-container th {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  border: 1px solid #cbd5e1 !important;
+  padding: 8px 10px !important;
+  text-align: left;
+}
+
+.pdf-export-container td {
+  border: 1px solid #e2e8f0 !important;
+  padding: 7px 10px !important;
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+}
+
+.pdf-export-container tr:nth-child(even) td {
+  background-color: #f8fafc !important;
+}
+
+.pdf-export-container pre {
+  background-color: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  padding: 12px 16px !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  margin: 14px 0 !important;
+  page-break-inside: avoid !important;
+}
+
+.pdf-export-container pre code {
+  color: #0f172a !important;
+}
+
+.pdf-export-container code {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 4px !important;
+  padding: 2px 5px !important;
+  color: #0f172a !important;
+  font-size: 12px !important;
+}
+
+.pdf-export-container blockquote {
+  border-left: 4px solid #7c3aed !important;
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  padding: 8px 16px !important;
+  margin: 14px 0 !important;
+  page-break-inside: avoid !important;
+}
+
+.pdf-export-container .copy-btn {
+  display: none !important;
+}
+
 /* Publication-Grade Print & PDF Styles (Matches mdtopdf.pro) */
 @page {
   size: A4 portrait;
-  margin: 15mm 15mm 15mm 15mm;
+  margin: 12mm 15mm 15mm 15mm;
 }
 
 @media print {
@@ -543,88 +836,193 @@ body {
     print-color-adjust: exact !important;
   }
 
-  body {
-    background: #ffffff !important;
-    color: #1a202c !important;
-    overflow: visible !important;
+  /* 1. Uncap height and remove overflow clipping across all container ancestors */
+  html,
+  body,
+  #root,
+  .app-container,
+  .workspace,
+  .preview-panel,
+  .preview-content {
+    width: 100% !important;
     height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    display: block !important;
+    float: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
   }
 
+  /* 2. Force light print design tokens regardless of user theme */
+  :root,
+  [data-theme='dark'],
+  [data-theme='light'],
+  .app-container {
+    --bg-app: #ffffff !important;
+    --bg-panel: #ffffff !important;
+    --text-main: #0f172a !important;
+    --text-muted: #334155 !important;
+    --border-color: #cbd5e1 !important;
+    --code-bg: #f8fafc !important;
+    --code-border: #cbd5e1 !important;
+    --table-border: #cbd5e1 !important;
+    --table-header: #f1f5f9 !important;
+    --table-zebra: #f8fafc !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  /* Hide screen UI elements */
   .app-header,
   .dropzone-banner,
   .editor-panel,
   .panel-header,
   .copy-btn,
-  .drag-overlay {
+  .drag-overlay,
+  .toast-container {
     display: none !important;
   }
 
-  .workspace {
-    display: block !important;
-    overflow: visible !important;
-  }
-
-  .preview-panel {
-    display: block !important;
-    overflow: visible !important;
-  }
-
+  /* 3. High-contrast typography */
   .preview-content {
-    padding: 0 !important;
-    overflow: visible !important;
-    font-size: 11pt !important;
-    line-height: 1.6 !important;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    page-break-after: avoid;
-    break-after: avoid;
+    font-size: 10.5pt !important;
+    line-height: 1.55 !important;
     color: #0f172a !important;
   }
 
+  .preview-content,
+  .preview-content * {
+    color: #0f172a !important;
+    text-shadow: none !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+  }
+
   h1 {
-    font-size: 20pt !important;
+    font-size: 19pt !important;
     border-bottom: 1.5pt solid #cbd5e1 !important;
     padding-bottom: 4pt !important;
+    margin-top: 0 !important;
     margin-bottom: 12pt !important;
   }
 
   h2 {
-    font-size: 15pt !important;
+    font-size: 14.5pt !important;
     border-bottom: 1pt solid #e2e8f0 !important;
     padding-bottom: 3pt !important;
-    margin-top: 16pt !important;
+    margin-top: 14pt !important;
+    margin-bottom: 8pt !important;
   }
 
-  table, pre, blockquote, img {
-    page-break-inside: avoid;
-    break-inside: avoid;
+  h3 {
+    font-size: 12pt !important;
+    margin-top: 12pt !important;
+    margin-bottom: 6pt !important;
   }
 
-  pre {
-    background: #f8fafc !important;
-    border: 1pt solid #cbd5e1 !important;
-    color: #0f172a !important;
-    padding: 8pt 10pt !important;
+  p {
+    margin-bottom: 7pt !important;
+  }
+
+  /* 4. Robust Table Pagination & Formatting */
+  .preview-content table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 12pt 0 !important;
     font-size: 9pt !important;
-  }
-
-  blockquote {
-    border-left: 3pt solid #3b82f6 !important;
-    background: #f8fafc !important;
-    color: #334155 !important;
-  }
-
-  table {
     border: 1pt solid #cbd5e1 !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    word-break: break-word !important;
   }
 
-  th {
-    background: #f1f5f9 !important;
+  .preview-content thead {
+    display: table-header-group !important; /* Repeats header on every page */
+  }
+
+  .preview-content tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .preview-content th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    border: 1pt solid #cbd5e1 !important;
+    padding: 5pt 7pt !important;
+    text-align: left;
+  }
+
+  .preview-content td {
+    border: 1pt solid #e2e8f0 !important;
+    padding: 5pt 7pt !important;
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+  }
+
+  .preview-content tr:nth-child(even) td {
+    background-color: #f8fafc !important;
+  }
+
+  /* 5. Code & Quotes */
+  .preview-content pre {
+    background-color: #f8fafc !important;
+    border: 1pt solid #cbd5e1 !important;
+    border-radius: 4pt !important;
+    padding: 8pt 10pt !important;
+    margin: 10pt 0 !important;
+    font-size: 8.5pt !important;
+    line-height: 1.45 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+  }
+
+  .preview-content pre code {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
     color: #0f172a !important;
   }
 
-  tr:nth-child(even) td {
-    background: #f8fafc !important;
+  .preview-content code {
+    background-color: #f1f5f9 !important;
+    border: 0.5pt solid #cbd5e1 !important;
+    border-radius: 3pt !important;
+    padding: 1pt 3pt !important;
+    color: #0f172a !important;
+    font-size: 8.5pt !important;
+  }
+
+  .preview-content blockquote {
+    border-left: 3pt solid #3b82f6 !important;
+    background-color: #f8fafc !important;
+    color: #334155 !important;
+    padding: 6pt 12pt !important;
+    margin: 10pt 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .preview-content img {
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+  }
+
+  .preview-content hr {
+    border: none !important;
+    border-top: 1pt solid #e2e8f0 !important;
+    margin: 12pt 0 !important;
   }
 }

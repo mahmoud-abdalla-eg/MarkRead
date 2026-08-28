@@ -179,6 +179,72 @@ public partial class MainWindow : Window
         ShellIntegration.AddToJumpList(filePath);
     }
 
+    public void OpenTarget(string path)
+    {
+        if (File.Exists(path))
+        {
+            OpenFile(path);
+        }
+        else if (Directory.Exists(path))
+        {
+            OpenDirectory(path);
+        }
+    }
+
+    public void OpenDirectory(string dirPath)
+    {
+        if (!Directory.Exists(dirPath)) return;
+
+        try
+        {
+            // Find top-level markdown files
+            var mdFiles = Directory.GetFiles(dirPath, "*.md", SearchOption.TopDirectoryOnly)
+                .Concat(Directory.GetFiles(dirPath, "*.markdown", SearchOption.TopDirectoryOnly))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            // If none in root, search subdirectories up to 15 files
+            if (mdFiles.Count == 0)
+            {
+                var subFiles = Directory.GetFiles(dirPath, "*.md", SearchOption.AllDirectories)
+                    .Concat(Directory.GetFiles(dirPath, "*.markdown", SearchOption.AllDirectories))
+                    .Take(15)
+                    .ToList();
+                mdFiles.AddRange(subFiles);
+            }
+
+            if (mdFiles.Count == 0)
+            {
+                MessageBox.Show($"No Markdown (.md) documents found in folder:\n{dirPath}", "MarkRead", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            // Prioritize README.md, readme.md, or index.md
+            string? mainDoc = mdFiles.FirstOrDefault(f =>
+                string.Equals(Path.GetFileName(f), "README.md", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(Path.GetFileName(f), "readme.md", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(Path.GetFileName(f), "index.md", StringComparison.OrdinalIgnoreCase));
+
+            mainDoc ??= mdFiles[0];
+
+            // Open other files as tabs first
+            foreach (var file in mdFiles.Take(8))
+            {
+                if (!string.Equals(file, mainDoc, StringComparison.OrdinalIgnoreCase))
+                {
+                    OpenFile(file);
+                }
+            }
+
+            // Open and select the primary document
+            OpenFile(mainDoc);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error opening folder: {ex.Message}", "MarkRead", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
     private void SelectTab(TabDocument tab)
     {
         _activeTab = tab;
@@ -406,10 +472,7 @@ public partial class MainWindow : Window
             {
                 foreach (var file in files)
                 {
-                    if (File.Exists(file))
-                    {
-                        OpenFile(file);
-                    }
+                    OpenTarget(file);
                 }
             }
         }

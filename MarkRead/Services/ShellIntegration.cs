@@ -12,12 +12,110 @@ public static class ShellIntegration
     private const string ProgId = "MarkRead.Document";
     private const string AppName = "MarkRead.exe";
 
+    public static string GetExecutablePath()
+    {
+        return Environment.ProcessPath 
+               ?? Process.GetCurrentProcess().MainModule?.FileName 
+               ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppName);
+    }
+
+    public static bool IsFileContextMenuRegistered()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Classes\SystemFileAssociations\.md\shell\Open with MarkRead");
+            return key != null;
+        }
+        catch { return false; }
+    }
+
+    public static bool IsDirectoryContextMenuRegistered()
+    {
+        try
+        {
+            using var key1 = Registry.CurrentUser.OpenSubKey(@"Software\Classes\Directory\shell\Open with MarkRead");
+            using var key2 = Registry.CurrentUser.OpenSubKey(@"Software\Classes\Directory\Background\shell\Open with MarkRead");
+            return key1 != null || key2 != null;
+        }
+        catch { return false; }
+    }
+
+    public static bool IsDefaultProgIdRegistered()
+    {
+        try
+        {
+            using var mdKey = Registry.CurrentUser.OpenSubKey(@"Software\Classes\.md");
+            string? val = mdKey?.GetValue("")?.ToString();
+            return string.Equals(val, ProgId, StringComparison.OrdinalIgnoreCase);
+        }
+        catch { return false; }
+    }
+
+    public static void SetFileContextMenu(bool enable)
+    {
+        string exePath = GetExecutablePath();
+
+        if (enable)
+        {
+            using (var ctxKey = Registry.CurrentUser.CreateSubKey(@"Software\Classes\SystemFileAssociations\.md\shell\Open with MarkRead"))
+            {
+                ctxKey.SetValue("", "Open with MarkRead");
+                ctxKey.SetValue("Icon", $"\"{exePath}\",0");
+                using var cmdKey = ctxKey.CreateSubKey("command");
+                cmdKey.SetValue("", $"\"{exePath}\" \"%1\"");
+            }
+
+            using (var ctxKey2 = Registry.CurrentUser.CreateSubKey(@"Software\Classes\SystemFileAssociations\.markdown\shell\Open with MarkRead"))
+            {
+                ctxKey2.SetValue("", "Open with MarkRead");
+                ctxKey2.SetValue("Icon", $"\"{exePath}\",0");
+                using var cmdKey = ctxKey2.CreateSubKey("command");
+                cmdKey.SetValue("", $"\"{exePath}\" \"%1\"");
+            }
+        }
+        else
+        {
+            try { Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\SystemFileAssociations\.md\shell\Open with MarkRead", false); } catch { }
+            try { Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\SystemFileAssociations\.markdown\shell\Open with MarkRead", false); } catch { }
+        }
+    }
+
+    public static void SetDirectoryContextMenu(bool enable)
+    {
+        string exePath = GetExecutablePath();
+
+        if (enable)
+        {
+            // 1. Right-click on a folder in Windows Explorer
+            using (var dirKey = Registry.CurrentUser.CreateSubKey(@"Software\Classes\Directory\shell\Open with MarkRead"))
+            {
+                dirKey.SetValue("", "Open with MarkRead");
+                dirKey.SetValue("Icon", $"\"{exePath}\",0");
+                using var cmdKey = dirKey.CreateSubKey("command");
+                cmdKey.SetValue("", $"\"{exePath}\" \"%V\"");
+            }
+
+            // 2. Right-click on empty background inside an open folder in Windows Explorer
+            using (var bgKey = Registry.CurrentUser.CreateSubKey(@"Software\Classes\Directory\Background\shell\Open with MarkRead"))
+            {
+                bgKey.SetValue("", "Open with MarkRead");
+                bgKey.SetValue("Icon", $"\"{exePath}\",0");
+                using var cmdKey = bgKey.CreateSubKey("command");
+                cmdKey.SetValue("", $"\"{exePath}\" \"%V\"");
+            }
+        }
+        else
+        {
+            try { Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\Directory\shell\Open with MarkRead", false); } catch { }
+            try { Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\Directory\Background\shell\Open with MarkRead", false); } catch { }
+        }
+    }
+
     public static bool RegisterFileAssociations()
     {
         try
         {
-            string exePath = Process.GetCurrentProcess().MainModule?.FileName 
-                             ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppName);
+            string exePath = GetExecutablePath();
 
             // 1. HKCU\Software\Classes\Applications\MarkRead.exe
             using (var appKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\Applications\{AppName}"))
@@ -60,22 +158,11 @@ public static class ShellIntegration
                 openWith.SetValue(ProgId, string.Empty);
             }
 
-            // 4. Direct right-click context menu: "Open with MarkRead"
-            using (var ctxKey = Registry.CurrentUser.CreateSubKey(@"Software\Classes\SystemFileAssociations\.md\shell\Open with MarkRead"))
-            {
-                ctxKey.SetValue("", "Open with MarkRead");
-                ctxKey.SetValue("Icon", $"\"{exePath}\",0");
-                using var cmdKey = ctxKey.CreateSubKey("command");
-                cmdKey.SetValue("", $"\"{exePath}\" \"%1\"");
-            }
+            // 4. Register file context menu
+            SetFileContextMenu(true);
 
-            using (var ctxKey2 = Registry.CurrentUser.CreateSubKey(@"Software\Classes\SystemFileAssociations\.markdown\shell\Open with MarkRead"))
-            {
-                ctxKey2.SetValue("", "Open with MarkRead");
-                ctxKey2.SetValue("Icon", $"\"{exePath}\",0");
-                using var cmdKey = ctxKey2.CreateSubKey("command");
-                cmdKey.SetValue("", $"\"{exePath}\" \"%1\"");
-            }
+            // 5. Register directory context menu (VS Code style)
+            SetDirectoryContextMenu(true);
 
             // Create desktop shortcut for taskbar pinning
             CreateDesktopShortcut(exePath);
@@ -95,8 +182,9 @@ public static class ShellIntegration
         {
             Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\Applications\{AppName}", false);
             Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\{ProgId}", false);
-            Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\SystemFileAssociations\.md\shell\Open with MarkRead", false);
-            Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\SystemFileAssociations\.markdown\shell\Open with MarkRead", false);
+
+            SetFileContextMenu(false);
+            SetDirectoryContextMenu(false);
 
             using (var mdKey = Registry.CurrentUser.OpenSubKey(@"Software\Classes\.md\OpenWithProgids", true))
             {
@@ -120,8 +208,7 @@ public static class ShellIntegration
     {
         try
         {
-            exePath ??= Process.GetCurrentProcess().MainModule?.FileName 
-                        ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppName);
+            exePath ??= GetExecutablePath();
 
             string desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
             string shortcutPath = Path.Combine(desktopDir, "MarkRead.lnk");
@@ -187,6 +274,51 @@ public static class ShellIntegration
                 Arguments = $"shell32.dll,OpenAs_RunDLL \"{sampleFile}\"",
                 UseShellExecute = true
             });
+        }
+        catch { }
+    }
+
+    public static bool IsClassicContextMenuEnabled()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32");
+            return key != null;
+        }
+        catch { return false; }
+    }
+
+    public static void SetClassicContextMenu(bool enable)
+    {
+        try
+        {
+            if (enable)
+            {
+                using var key = Registry.CurrentUser.CreateSubKey(@"Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32");
+                key.SetValue("", "");
+            }
+            else
+            {
+                Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}", false);
+            }
+
+            RestartExplorer();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Failed to toggle context menu: {ex.Message}");
+        }
+    }
+
+    public static void RestartExplorer()
+    {
+        try
+        {
+            foreach (var p in Process.GetProcessesByName("explorer"))
+            {
+                try { p.Kill(); } catch { }
+            }
+            Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
         }
         catch { }
     }

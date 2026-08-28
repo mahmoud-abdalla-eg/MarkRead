@@ -272,7 +272,7 @@
                             <TextBlock x:Name="TxtStatusBanner" Text="Action completed." Foreground="#34D399" FontSize="12" FontWeight="Medium"/>
                         </Border>
 
-                        <!-- Context Menu Card -->
+                        <!-- File Context Menu Card -->
                         <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -280,11 +280,52 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Margin="0,0,16,0">
-                                    <TextBlock Text="Right-Click 'Open with MarkRead'" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
-                                    <TextBlock Text="Adds a convenient 'Open with MarkRead' item to Windows Explorer context menu for all .md and .markdown files." 
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="Add &quot;Open with MarkRead&quot; action to Windows Explorer file context menu" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13"/>
+                                        <TextBlock x:Name="TxtFileMenuStatus" Text="" Foreground="#34D399" FontSize="11" FontWeight="Medium" Margin="8,1,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Right-click any .md, .markdown, or text file to open it directly in MarkRead." 
                                                Foreground="#71717A" FontSize="12" TextWrapping="Wrap"/>
                                 </StackPanel>
-                                <Button Grid.Column="1" Style="{StaticResource ActionButtonStyle}" Content="Add Context Menu" Click="BtnRegisterContextMenu_Click" VerticalAlignment="Center"/>
+                                <Button x:Name="BtnFileMenu" Grid.Column="1" Style="{StaticResource ActionButtonStyle}" Content="Add to Menu" Click="BtnToggleFileContextMenu_Click" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Directory Context Menu Card (VS Code style) -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="Add &quot;Open with MarkRead&quot; action to Windows Explorer directory context menu" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13"/>
+                                        <TextBlock x:Name="TxtDirMenuStatus" Text="" Foreground="#34D399" FontSize="11" FontWeight="Medium" Margin="8,1,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Right-click any folder or empty folder space to open its README and documentation in MarkRead." 
+                                               Foreground="#71717A" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button x:Name="BtnDirMenu" Grid.Column="1" Style="{StaticResource ActionButtonStyle}" Content="Add to Menu" Click="BtnToggleDirectoryContextMenu_Click" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Windows 11 Direct Menu Card -->
+                        <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="Windows 11: Show directly on first right-click" Foreground="#FAFAFA" FontWeight="SemiBold" FontSize="13"/>
+                                        <TextBlock x:Name="TxtWin11MenuStatus" Text="" Foreground="#34D399" FontSize="11" FontWeight="Medium" Margin="8,1,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Text="By default, Windows 11 hides custom app menus behind 'Show more options'. Enabling this makes 'Open with MarkRead' appear directly on the primary right-click menu." 
+                                               Foreground="#71717A" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button x:Name="BtnToggleWin11Menu" Grid.Column="1" Style="{StaticResource ActionButtonStyle}" Content="Show Directly" Click="BtnToggleWin11Menu_Click" VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
 

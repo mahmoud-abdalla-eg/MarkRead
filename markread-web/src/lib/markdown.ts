@@ -3,6 +3,8 @@
  * Produces clean, accessible HTML with support for tables, task lists, and syntax blocks.
  */
 
+import { highlightCode } from './syntaxHighlight';
+
 export function parseMarkdown(md: string): string {
     if (!md) return '';
 
@@ -56,10 +58,11 @@ export function parseMarkdown(md: string): string {
             flushBlockquote();
 
             if (inCodeBlock) {
-                const escaped = escapeHtml(codeBuffer.join('\n'));
+                const rawCode = codeBuffer.join('\n');
+                const highlighted = highlightCode(rawCode, codeLanguage);
                 const langClass = codeLanguage ? ` class="language-${codeLanguage}"` : '';
                 html.push(
-                    `<pre><button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='Copied!';setTimeout(()=>this.innerText='Copy',1500)">Copy</button><code${langClass}>${escaped}</code></pre>`
+                    `<pre><button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='Copied!';setTimeout(()=>this.innerText='Copy',1500)">Copy</button><code${langClass}>${highlighted}</code></pre>`
                 );
                 codeBuffer = [];
                 inCodeBlock = false;

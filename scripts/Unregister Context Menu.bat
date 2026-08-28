@@ -8,6 +8,8 @@ echo.
 reg delete "HKCU\Software\Classes\Applications\MarkRead.exe" /f >nul 2>&1
 reg delete "HKCU\Software\Classes\SystemFileAssociations\.md\shell\Open with MarkRead" /f >nul 2>&1
 reg delete "HKCU\Software\Classes\SystemFileAssociations\.markdown\shell\Open with MarkRead" /f >nul 2>&1
+reg delete "HKCU\Software\Classes\Directory\shell\Open with MarkRead" /f >nul 2>&1
+reg delete "HKCU\Software\Classes\Directory\Background\shell\Open with MarkRead" /f >nul 2>&1
 reg delete "HKCU\Software\Classes\MarkRead.Document" /f >nul 2>&1
 
 reg delete "HKCU\Software\Classes\.md\OpenWithProgids" /v "MarkRead.Document" /f >nul 2>&1
