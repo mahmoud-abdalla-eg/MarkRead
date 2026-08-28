@@ -344,17 +344,28 @@ body {
 }
 
 .preview-panel {
-  background: var(--bg-panel);
-}
-
-.preview-content {
-  flex: 1;
+  background: var(--bg-app);
   overflow-y: auto;
-  padding: 36px 48px;
-  line-height: 1.7;
+  padding: 36px 20px 60px 20px;
 }
 
-/* Typography Themes */
+/* Floating White A4 Paper Sheet (Matches mdtopdf.pro) */
+.preview-content {
+  width: 100%;
+  max-width: 820px;
+  min-height: 1050px;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 20px 35px -4px rgba(0, 0, 0, 0.25);
+  padding: 56px 64px;
+  margin: 0 auto;
+  line-height: 1.7;
+  box-sizing: border-box;
+}
+
+/* Typography Themes for Paper Sheet */
 .theme-modern {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
@@ -367,16 +378,18 @@ body {
   font-family: "Georgia", "Times New Roman", Cambria, serif;
 }
 
-/* Markdown Rendering Elements */
+/* Document Typography on White Sheet */
 .preview-content h1,
 .preview-content h2,
 .preview-content h3,
-.preview-content h4 {
+.preview-content h4,
+.preview-content h5,
+.preview-content h6 {
   font-weight: 700;
   line-height: 1.3;
   margin-top: 1.4em;
   margin-bottom: 0.6em;
-  color: var(--text-main);
+  color: #0f172a !important;
 }
 
 .preview-content h1:first-child {
@@ -385,13 +398,13 @@ body {
 
 .preview-content h1 {
   font-size: 2rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 2px solid #e2e8f0;
   padding-bottom: 0.3em;
 }
 
 .preview-content h2 {
   font-size: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid #e2e8f0;
   padding-bottom: 0.3em;
 }
 
@@ -399,26 +412,29 @@ body {
 .preview-content h4 { font-size: 1.1rem; }
 
 .preview-content p {
+  color: #1e293b !important;
   margin-bottom: 1em;
 }
 
 .preview-content blockquote {
-  border-left: 4px solid var(--accent-color);
-  padding: 10px 18px;
-  margin: 1.2em 0;
-  background: var(--code-bg);
+  border-left: 4px solid #7c3aed !important;
+  padding: 12px 20px;
+  margin: 1.4em 0;
+  background: #f8fafc !important;
   border-radius: 0 8px 8px 0;
-  color: var(--text-muted);
+  color: #334155 !important;
 }
 
 .preview-content ul,
 .preview-content ol {
   padding-left: 24px;
   margin-bottom: 1em;
+  color: #1e293b !important;
 }
 
 .preview-content li {
   margin-bottom: 0.35em;
+  color: #1e293b !important;
 }
 
 .task-list {
@@ -431,53 +447,62 @@ body {
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
+  color: #1e293b !important;
 }
 
 .preview-content hr {
   border: none;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid #e2e8f0;
   margin: 2em 0;
 }
 
+/* Tables on White Sheet */
 .preview-content table {
   width: 100%;
   border-collapse: collapse;
   margin: 1.5em 0;
-  border: 1px solid var(--table-border);
-  border-radius: 8px;
-  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  word-break: break-word;
 }
 
 .preview-content th,
 .preview-content td {
   padding: 10px 14px;
-  border: 1px solid var(--table-border);
+  border: 1px solid #e2e8f0;
   font-size: 13.5px;
 }
 
 .preview-content th {
-  background: var(--table-header);
-  font-weight: 600;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  font-weight: 700;
+  text-align: left;
+}
+
+.preview-content td {
+  background: #ffffff !important;
+  color: #1e293b !important;
 }
 
 .preview-content tr:nth-child(even) td {
-  background: var(--table-zebra);
+  background: #fcfcfd !important;
 }
 
+/* Code Blocks on White Sheet */
 .preview-content code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.88em;
-  background: var(--code-bg);
-  color: var(--text-main);
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
   padding: 2px 6px;
   border-radius: 4px;
-  border: 1px solid var(--code-border);
+  border: 1px solid #e2e8f0;
 }
 
 .preview-content pre {
   position: relative;
-  background: var(--code-bg);
-  border: 1px solid var(--border-color);
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 16px 20px;
   margin: 1.4em 0;
@@ -488,88 +513,73 @@ body {
 }
 
 .preview-content pre code {
-  background: transparent;
+  background: transparent !important;
+  color: #0f172a !important;
   padding: 0;
   border: none;
   font-family: inherit;
 }
 
-/* Prism Syntax Highlighting Tokens (Obsidian Dark) */
-.token.comment,
-.token.prolog,
-.token.doctype,
-.token.cdata {
-  color: #71717a;
+/* Prism Syntax Tokens on White Sheet */
+.preview-content .token.comment,
+.preview-content .token.prolog,
+.preview-content .token.doctype,
+.preview-content .token.cdata {
+  color: #64748b !important;
   font-style: italic;
 }
 
-.token.punctuation {
-  color: #a1a1aa;
+.preview-content .token.punctuation {
+  color: #475569 !important;
 }
 
-.token.property,
-.token.tag,
-.token.boolean,
-.token.number,
-.token.constant,
-.token.symbol,
-.token.deleted {
-  color: #fb923c;
+.preview-content .token.property,
+.preview-content .token.tag,
+.preview-content .token.boolean,
+.preview-content .token.number,
+.preview-content .token.constant,
+.preview-content .token.symbol,
+.preview-content .token.deleted {
+  color: #ea580c !important;
 }
 
-.token.selector,
-.token.attr-name,
-.token.string,
-.token.char,
-.token.builtin,
-.token.inserted {
-  color: #34d399;
+.preview-content .token.selector,
+.preview-content .token.attr-name,
+.preview-content .token.string,
+.preview-content .token.char,
+.preview-content .token.builtin,
+.preview-content .token.inserted {
+  color: #059669 !important;
 }
 
-.token.operator,
-.token.entity,
-.token.url {
-  color: #38bdf8;
+.preview-content .token.operator,
+.preview-content .token.entity,
+.preview-content .token.url {
+  color: #0284c7 !important;
 }
 
-.token.atrule,
-.token.attr-value,
-.token.keyword {
-  color: #c084fc;
+.preview-content .token.atrule,
+.preview-content .token.attr-value,
+.preview-content .token.keyword {
+  color: #7c3aed !important;
   font-weight: 600;
 }
 
-.token.function,
-.token.class-name {
-  color: #60a5fa;
-}
-
-.token.regex,
-.token.important,
-.token.variable {
-  color: #fbbf24;
-}
-
-/* Light & PDF Export Syntax Overrides */
-[data-theme='light'] .token.comment,
-.pdf-export-container .token.comment {
-  color: #64748b !important;
-}
-[data-theme='light'] .token.keyword,
-.pdf-export-container .token.keyword {
-  color: #7c3aed !important;
-}
-[data-theme='light'] .token.string,
-.pdf-export-container .token.string {
-  color: #059669 !important;
-}
-[data-theme='light'] .token.function,
-.pdf-export-container .token.function {
+.preview-content .token.function,
+.preview-content .token.class-name {
   color: #0284c7 !important;
 }
-[data-theme='light'] .token.number,
-.pdf-export-container .token.number {
+
+.preview-content .token.regex,
+.preview-content .token.important,
+.preview-content .token.variable {
   color: #d97706 !important;
+}
+
+/* Links & Copy Button */
+.preview-content a {
+  color: #7c3aed !important;
+  text-decoration: underline;
 }
 
 .copy-btn {
@@ -578,23 +588,21 @@ body {
   right: 8px;
   padding: 4px 8px;
   font-size: 11px;
-  border: 1px solid var(--border-color);
+  border: 1px solid #cbd5e1;
   border-radius: 4px;
-  background: var(--bg-panel);
-  color: var(--text-main);
+  background: #ffffff;
+  color: #334155;
   cursor: pointer;
-  opacity: 0.7;
+  opacity: 0.8;
   transition: opacity 0.2s;
 }
 
 .copy-btn:hover {
   opacity: 1;
+  background: #f1f5f9;
 }
 
-.preview-content a {
-  color: var(--accent-color);
-  text-decoration: underline;
-}
+
 
 /* Fullscreen Overlay for Drag and Drop */
 .drag-overlay {
