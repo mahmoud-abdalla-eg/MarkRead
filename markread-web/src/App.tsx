@@ -267,11 +267,18 @@ export function App() {
     const targetFileName = fileName.replace(/\.[^/.]+$/, '') + '.pdf';
 
     try {
-      // Create isolated export container with clean A4 print styles
-      const exportContainer = document.createElement('div');
-      exportContainer.className = `pdf-export-container theme-${theme}`;
-      exportContainer.innerHTML = htmlContent;
-      document.body.appendChild(exportContainer);
+      // Target the active on-screen preview element directly
+      const previewEl = document.querySelector('.preview-content') as HTMLElement;
+      if (!previewEl) throw new Error('Preview element not found');
+
+      // Temporarily unconstrain overflow so html2canvas renders the full document top-to-bottom
+      const prevOverflow = previewEl.style.overflow;
+      const prevHeight = previewEl.style.height;
+      const prevMaxHeight = previewEl.style.maxHeight;
+
+      previewEl.style.overflow = 'visible';
+      previewEl.style.height = 'auto';
+      previewEl.style.maxHeight = 'none';
 
       const opt = {
         margin: [12, 14, 12, 14] as [number, number, number, number],
@@ -281,6 +288,7 @@ export function App() {
           scale: 2,
           useCORS: true,
           logging: false,
+          scrollY: 0,
           backgroundColor: '#ffffff',
         },
         jsPDF: {
@@ -294,18 +302,29 @@ export function App() {
         },
       };
 
-      // Generate and trigger an authentic browser file download!
-      // This registers in Chrome's Download Tray and chrome://downloads tab!
-      await html2pdf().set(opt).from(exportContainer).save();
-      document.body.removeChild(exportContainer);
-      showToast(`Downloaded "${targetFileName}" — check Chrome Downloads!`, 'warning');
+      try {
+        await html2pdf().set(opt).from(previewEl).save();
+        showToast(`Downloaded "${targetFileName}" — check Chrome Downloads!`, 'warning');
+      } finally {
+        previewEl.style.overflow = prevOverflow;
+        previewEl.style.height = prevHeight;
+        previewEl.style.maxHeight = prevMaxHeight;
+      }
     } catch (err: any) {
       console.error('PDF direct download error, falling back to print dialog:', err);
-      showToast('Downloading via print fallback...', 'warning');
+      showToast('Downloading via print dialog...', 'warning');
       window.print();
     } finally {
       setIsGeneratingPdf(false);
     }
+  };
+
+  // Direct System Print / Vector PDF Fallback
+  const handlePrintPdf = () => {
+    const originalTitle = document.title;
+    document.title = fileName.replace(/\.[^/.]+$/, '') + '.pdf';
+    window.print();
+    document.title = originalTitle;
   };
 
   const htmlContent = parseMarkdown(markdown);
@@ -425,6 +444,15 @@ export function App() {
               📥 Download PDF
             </button>
           )}
+
+          {/* System Print & Vector PDF */}
+          <button
+            className="btn"
+            onClick={handlePrintPdf}
+            title="Open system print / vector PDF dialog with selectable text"
+          >
+            🖨️ Print
+          </button>
         </div>
       </header>
 
