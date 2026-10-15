@@ -90,6 +90,9 @@ function initDropzoneEvents() {
 
     window.addEventListener('dragover', (e) => {
         e.preventDefault();
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = 'copy';
+        }
     });
 
     window.addEventListener('dragleave', (e) => {
@@ -101,10 +104,45 @@ function initDropzoneEvents() {
         }
     });
 
-    window.addEventListener('drop', (e) => {
+    window.addEventListener('drop', async (e) => {
         e.preventDefault();
         dragCounter = 0;
         overlay.classList.remove('active');
+
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                const file = e.dataTransfer.files[i];
+                if (file.path) {
+                    if (window.chrome && window.chrome.webview) {
+                        window.chrome.webview.postMessage({ type: 'openDroppedFile', path: file.path });
+                    }
+                } else {
+                    try {
+                        let text = '';
+                        if (typeof file.text === 'function') {
+                            text = await file.text();
+                        } else {
+                            text = await new Promise((resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.onload = () => resolve(reader.result);
+                                reader.onerror = reject;
+                                reader.readAsText(file);
+                            });
+                        }
+
+                        if (window.chrome && window.chrome.webview) {
+                            window.chrome.webview.postMessage({
+                                type: 'openDroppedContent',
+                                name: file.name,
+                                content: text
+                            });
+                        }
+                    } catch (err) {
+                        console.error('Failed to read dropped file text: ', err);
+                    }
+                }
+            }
+        }
     });
 }
 

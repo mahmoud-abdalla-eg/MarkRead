@@ -4,13 +4,16 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
         mc:Ignorable="d"
         Title="MarkRead - Modern Markdown Viewer"
         Height="780" Width="1100"
         MinHeight="450" MinWidth="650"
         WindowStartupLocation="CenterScreen"
         AllowDrop="True"
+        PreviewDragEnter="Window_PreviewDragOver"
         PreviewDragOver="Window_PreviewDragOver"
+        PreviewDrop="Window_PreviewDrop"
         Drop="Window_Drop"
         KeyDown="Window_KeyDown"
         Background="#09090B"
@@ -183,6 +186,14 @@
                             </StackPanel>
                         </Button>
 
+                        <!-- Edit / Split View Toggle -->
+                        <Button x:Name="BtnToggleEdit" Style="{StaticResource ToolbarButtonStyle}" Click="BtnToggleEdit_Click" ToolTip="Toggle Edit Split View (Ctrl+E)">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="TxtToggleEditIcon" Text="✏️ " FontSize="12"/>
+                                <TextBlock x:Name="TxtToggleEdit" Text="Edit" FontSize="12"/>
+                            </StackPanel>
+                        </Button>
+
                         <!-- Toggle Raw / Rendered -->
                         <Button x:Name="BtnToggleRaw" Style="{StaticResource ToolbarButtonStyle}" Click="BtnToggleRaw_Click" ToolTip="Toggle Raw / Rendered Mode (Ctrl+U)">
                             <StackPanel Orientation="Horizontal">
@@ -275,8 +286,10 @@
             </Grid>
         </Border>
 
-        <!-- Main Display: WebView2 & Empty State -->
-        <Grid Grid.Row="2">
+        <!-- Main Display: Split Workspace (Editor + Splitter + Preview) & Empty State -->
+        <Grid Grid.Row="2" x:Name="WorkspaceGrid" AllowDrop="True"
+              PreviewDragEnter="Window_PreviewDragOver" PreviewDragOver="Window_PreviewDragOver"
+              PreviewDrop="Window_PreviewDrop" Drop="Window_Drop">
             <!-- Empty State / Dropzone (Shown when no tab is open) - Styled like mdtopdf.pro upload card -->
             <Border x:Name="EmptyStateOverlay" Background="#09090B" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Visible">
                 <Border BorderBrush="#27272A" BorderThickness="1.5" CornerRadius="16" Margin="48" Background="#121215" MaxWidth="640" MaxHeight="430" Padding="40,32" VerticalAlignment="Center">
@@ -343,8 +356,113 @@
                 </Border>
             </Border>
 
-            <!-- Microsoft WebView2 Control -->
-            <wv2:WebView2 x:Name="WebViewControl" Visibility="Collapsed" CoreWebView2InitializationCompleted="WebViewControl_CoreWebView2InitializationCompleted"/>
+            <!-- Split Workspace: Left Editor, Middle Splitter, Right Preview -->
+            <Grid x:Name="SplitWorkspace" Visibility="Collapsed" AllowDrop="True"
+                  PreviewDragEnter="Window_PreviewDragOver" PreviewDragOver="Window_PreviewDragOver"
+                  PreviewDrop="Window_PreviewDrop" Drop="Window_Drop">
+                <Grid.ColumnDefinitions>
+                    <!-- Column 0: Editor Panel (0 width in reader mode, 1* in split mode) -->
+                    <ColumnDefinition x:Name="ColEditor" Width="0" MinWidth="0"/>
+                    <!-- Column 1: Splitter -->
+                    <ColumnDefinition x:Name="ColSplitter" Width="Auto"/>
+                    <!-- Column 2: Preview -->
+                    <ColumnDefinition x:Name="ColPreview" Width="*" MinWidth="220"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Markdown Editor Panel -->
+                <Grid x:Name="EditorPanel" Grid.Column="0" Background="#121215" Visibility="Collapsed"
+                      AllowDrop="True" PreviewDragEnter="Window_PreviewDragOver" PreviewDragOver="Window_PreviewDragOver"
+                      PreviewDrop="Window_PreviewDrop" Drop="Window_Drop">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="28"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Editor Header Toolbar -->
+                    <Border Grid.Row="0" Background="#18181B" BorderBrush="#27272A" BorderThickness="0,0,1,1" Padding="10,6">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Title & Unsaved Badge -->
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                                <TextBlock Text="MARKDOWN EDITOR" Foreground="#A1A1AA" FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
+                                <Border x:Name="UnsavedBadge" Background="#F59E0B" CornerRadius="4" Padding="6,1" Margin="8,0,0,0" Visibility="Collapsed">
+                                    <TextBlock Text="● Unsaved" Foreground="#09090B" FontWeight="Bold" FontSize="10"/>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Formatting Buttons -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Style="{StaticResource ToolbarButtonStyle}" Content="B" FontWeight="Bold" ToolTip="Bold (**text**)" Click="BtnFormatBold_Click" Padding="6,2" Margin="1,0"/>
+                                <Button Style="{StaticResource ToolbarButtonStyle}" Content="I" FontStyle="Italic" ToolTip="Italic (*text*)" Click="BtnFormatItalic_Click" Padding="6,2" Margin="1,0"/>
+                                <Button Style="{StaticResource ToolbarButtonStyle}" Content="H2" FontWeight="SemiBold" ToolTip="Heading 2 (## Title)" Click="BtnFormatH2_Click" Padding="6,2" Margin="1,0"/>
+                                <Button Style="{StaticResource ToolbarButtonStyle}" Content="• List" ToolTip="Bullet List (- item)" Click="BtnFormatList_Click" Padding="6,2" Margin="1,0"/>
+                                <Button Style="{StaticResource ToolbarButtonStyle}" Content="☑ Task" ToolTip="Task List (- [ ] item)" Click="BtnFormatTask_Click" Padding="6,2" Margin="1,0"/>
+                                <Button Style="{StaticResource ToolbarButtonStyle}" Content="&lt;/&gt;" ToolTip="Code Block (```)" Click="BtnFormatCode_Click" Padding="6,2" Margin="1,0"/>
+                                <Button Style="{StaticResource ToolbarButtonStyle}" Content="” Quote" ToolTip="Blockquote (> quote)" Click="BtnFormatQuote_Click" Padding="6,2" Margin="1,0"/>
+                                <Button Style="{StaticResource ToolbarButtonStyle}" Content="🔗 Link" ToolTip="Link ([text](url))" Click="BtnFormatLink_Click" Padding="6,2" Margin="1,0"/>
+                            </StackPanel>
+
+                            <!-- Save Button -->
+                            <Button Grid.Column="2" x:Name="BtnSaveDoc" Style="{StaticResource PrimaryToolbarButtonStyle}" Click="BtnSaveDoc_Click" ToolTip="Save Changes to File (Ctrl+S)" Padding="10,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="💾 " FontSize="11"/>
+                                    <TextBlock Text="Save" FontSize="11"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- Editor Text Area with Syntax Highlighting -->
+                    <avalonEdit:TextEditor x:Name="EditorTextEditor" Grid.Row="1"
+                                           Background="#121215" Foreground="#F4F4F5"
+                                           LineNumbersForeground="#52525B"
+                                           FontFamily="Consolas, 'Cascadia Code', 'SF Mono', Menlo, monospace"
+                                           FontSize="13.5"
+                                           ShowLineNumbers="True"
+                                           WordWrap="True"
+                                           HorizontalScrollBarVisibility="Auto"
+                                           VerticalScrollBarVisibility="Auto"
+                                           Padding="14,12"
+                                           BorderThickness="0,0,1,0" BorderBrush="#27272A"
+                                           AllowDrop="True"
+                                           PreviewDragEnter="Window_PreviewDragOver" PreviewDragOver="Window_PreviewDragOver"
+                                           PreviewDrop="Window_PreviewDrop"
+                                           TextChanged="EditorTextEditor_TextChanged"
+                                           KeyDown="EditorTextEditor_KeyDown"/>
+
+                    <!-- Editor Bottom Status Bar -->
+                    <Border Grid.Row="2" Background="#18181B" BorderBrush="#27272A" BorderThickness="0,1,1,0" Padding="12,0">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="EditorStatsText" Text="0 words · 0 chars" Foreground="#71717A" FontSize="11" VerticalAlignment="Center"/>
+                            <TextBlock Text="Live preview sync · Press Ctrl+S to save" Foreground="#71717A" FontSize="10" Grid.Column="1" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- Resizable GridSplitter -->
+                <GridSplitter x:Name="WorkspaceSplitter" Grid.Column="1"
+                              Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                              Background="#27272A" ShowsPreview="False" Visibility="Collapsed"
+                              Cursor="SizeWE"/>
+
+                <!-- Right: Live WebView2 Preview -->
+                <Grid Grid.Column="2" x:Name="PreviewContainer" Background="#09090B"
+                      AllowDrop="True" PreviewDragEnter="Window_PreviewDragOver" PreviewDragOver="Window_PreviewDragOver"
+                      PreviewDrop="Window_PreviewDrop" Drop="Window_Drop">
+                    <wv2:WebView2 x:Name="WebViewControl" Visibility="Visible"
+                                  CoreWebView2InitializationCompleted="WebViewControl_CoreWebView2InitializationCompleted"/>
+                </Grid>
+            </Grid>
         </Grid>
 
         <!-- Status Bar -->

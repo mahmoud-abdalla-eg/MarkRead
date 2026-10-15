@@ -25,6 +25,13 @@ public partial class MainWindow : Window
     private string _currentTheme = "dark";
     private bool _isExplicitExit;
 
+    // Split View & Editor State
+    private bool _isSplitViewActive;
+    private bool _isEditorModified;
+    private bool _suppressEditorTextChanged;
+    private readonly System.Windows.Threading.DispatcherTimer _livePreviewDebounceTimer;
+    private string[]? _lastDraggedFiles;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -32,6 +39,21 @@ public partial class MainWindow : Window
         LoadWindowIcon();
         InitializeWebViewAsync();
         UpdateThemeUI();
+
+        // Initialize Markdown Syntax Highlighting & Caret Styling
+        EditorTextEditor.TextArea.TextView.LineTransformers.Add(new MarkdownColorizer());
+        EditorTextEditor.TextArea.Caret.CaretBrush = new SolidColorBrush(Color.FromRgb(167, 139, 250));
+        EditorTextEditor.TextArea.SelectionBrush = new SolidColorBrush(Color.FromArgb(120, 76, 29, 149));
+
+        _livePreviewDebounceTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(220)
+        };
+        _livePreviewDebounceTimer.Tick += (s, e) =>
+        {
+            _livePreviewDebounceTimer.Stop();
+            RenderLiveEditorPreview();
+        };
     }
 
     private void LoadWindowIcon()
@@ -85,6 +107,10 @@ public partial class MainWindow : Window
 
         // Allow WPF to handle drag & drop
         WebViewControl.AllowDrop = true;
+        WebViewControl.PreviewDragEnter += Window_PreviewDragOver;
+        WebViewControl.PreviewDragOver += Window_PreviewDragOver;
+        WebViewControl.PreviewDrop += Window_PreviewDrop;
+        WebViewControl.Drop += Window_Drop;
 
         core.WebMessageReceived += Core_WebMessageReceived;
         core.NavigationStarting += Core_NavigationStarting;
@@ -124,17 +150,54 @@ public partial class MainWindow : Window
                 string? url = root.GetProperty("url").GetString();
                 if (!string.IsNullOrEmpty(url)) OpenInBrowser(url);
             }
-            else if (type == "openLocalFile" && _activeTab != null)
+            else if (type == "openLocalFile")
             {
-                string? relPath = root.GetProperty("path").GetString();
-                if (!string.IsNullOrEmpty(relPath))
+                string? path = root.GetProperty("path").GetString();
+                if (!string.IsNullOrEmpty(path))
                 {
-                    string docDir = Path.GetDirectoryName(_activeTab.FilePath) ?? "";
-                    string target = Path.GetFullPath(Path.Combine(docDir, relPath));
-                    if (File.Exists(target))
+                    if (Path.IsPathRooted(path) && File.Exists(path))
                     {
-                        OpenFile(target);
+                        OpenFile(path);
                     }
+                    else if (_activeTab != null)
+                    {
+                        string docDir = Path.GetDirectoryName(_activeTab.FilePath) ?? "";
+                        string target = Path.GetFullPath(Path.Combine(docDir, path));
+                        if (File.Exists(target))
+                        {
+                            OpenFile(target);
+                        }
+                    }
+                }
+            }
+            else if (type == "openDroppedFile")
+            {
+                string? path = root.GetProperty("path").GetString();
+                if (!string.IsNullOrEmpty(path))
+                {
+                    OpenFile(path);
+                }
+            }
+            else if (type == "openDroppedContent")
+            {
+                string? name = root.TryGetProperty("name", out var n) ? n.GetString() : "Dropped.md";
+                string? content = root.TryGetProperty("content", out var c) ? c.GetString() : "";
+
+                // If we cached the real file path when dragged over the window, use the real path!
+                if (!string.IsNullOrEmpty(name) && _lastDraggedFiles != null && _lastDraggedFiles.Length > 0)
+                {
+                    string? match = _lastDraggedFiles.FirstOrDefault(f =>
+                        string.Equals(Path.GetFileName(f), name, StringComparison.OrdinalIgnoreCase) && File.Exists(f));
+                    if (match != null)
+                    {
+                        OpenFile(match);
+                        return;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(content))
+                {
+                    OpenContentAsTab(name ?? "Dropped.md", content);
                 }
             }
         }
@@ -168,7 +231,15 @@ public partial class MainWindow : Window
             {
                 if (_activeTab == newTab)
                 {
+                    if (_isSplitViewActive && _isEditorModified)
+                    {
+                        return;
+                    }
                     ReloadActiveTab(preserveScroll: true);
+                    if (_isSplitViewActive)
+                    {
+                        LoadActiveTabIntoEditor();
+                    }
                 }
             });
         };
@@ -188,6 +259,22 @@ public partial class MainWindow : Window
         else if (Directory.Exists(path))
         {
             OpenDirectory(path);
+        }
+    }
+
+    public void OpenContentAsTab(string fileName, string content)
+    {
+        try
+        {
+            string tempDir = Path.Combine(Path.GetTempPath(), "MarkRead", "DroppedFiles");
+            Directory.CreateDirectory(tempDir);
+            string tempPath = Path.Combine(tempDir, fileName);
+            File.WriteAllText(tempPath, content);
+            OpenFile(tempPath);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to open dropped document: {ex.Message}", "MarkRead", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -251,10 +338,16 @@ public partial class MainWindow : Window
         RebuildTabsUI();
 
         EmptyStateOverlay.Visibility = Visibility.Collapsed;
+        SplitWorkspace.Visibility = Visibility.Visible;
         WebViewControl.Visibility = Visibility.Visible;
 
         StatusFilePath.Text = tab.FilePath;
-        StatusMode.Text = tab.IsRawView ? "Raw Text" : "Rendered";
+        StatusMode.Text = _isSplitViewActive ? "Split Edit" : (tab.IsRawView ? "Raw Text" : "Rendered");
+
+        if (_isSplitViewActive)
+        {
+            LoadActiveTabIntoEditor();
+        }
 
         if (_isWebViewReady)
         {
@@ -266,6 +359,28 @@ public partial class MainWindow : Window
     {
         int index = _tabs.IndexOf(tab);
         if (index < 0) return;
+
+        if (_activeTab == tab && _isEditorModified)
+        {
+            var res = MessageBox.Show(
+                $"Save changes to \"{tab.Title.TrimEnd('*', ' ')}\" before closing?",
+                "MarkRead - Unsaved Changes",
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Cancel)
+            {
+                return;
+            }
+            if (res == MessageBoxResult.Yes)
+            {
+                SaveActiveDocument();
+            }
+            else
+            {
+                _isEditorModified = false;
+            }
+        }
 
         tab.Dispose();
         _tabs.RemoveAt(index);
@@ -280,8 +395,10 @@ public partial class MainWindow : Window
             else
             {
                 _activeTab = null;
+                _isEditorModified = false;
                 RebuildTabsUI();
                 EmptyStateOverlay.Visibility = Visibility.Visible;
+                SplitWorkspace.Visibility = Visibility.Collapsed;
                 WebViewControl.Visibility = Visibility.Collapsed;
                 StatusFilePath.Text = "Ready";
                 StatusDocInfo.Text = "";
@@ -458,8 +575,29 @@ public partial class MainWindow : Window
     {
         if (e.Data.GetDataPresent(DataFormats.FileDrop))
         {
+            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (files != null && files.Length > 0)
+            {
+                _lastDraggedFiles = files;
+            }
             e.Effects = DragDropEffects.Copy;
             e.Handled = true;
+        }
+    }
+
+    private void Window_PreviewDrop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            e.Handled = true;
+            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (files != null)
+            {
+                foreach (var file in files)
+                {
+                    OpenTarget(file);
+                }
+            }
         }
     }
 
@@ -477,6 +615,255 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    // Split View & Markdown Editor
+    private void BtnToggleEdit_Click(object sender, RoutedEventArgs e)
+    {
+        if (_activeTab == null)
+        {
+            MessageBox.Show("Please open a Markdown document first to edit.", "MarkRead", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (_isSplitViewActive && _isEditorModified)
+        {
+            var res = MessageBox.Show(
+                $"Save changes to \"{_activeTab.Title.TrimEnd('*', ' ')}\" before closing the editor?",
+                "MarkRead - Unsaved Changes",
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Cancel)
+            {
+                return;
+            }
+            if (res == MessageBoxResult.Yes)
+            {
+                SaveActiveDocument();
+            }
+            else
+            {
+                _isEditorModified = false;
+                if (_activeTab.Title.EndsWith('*'))
+                {
+                    _activeTab.Title = _activeTab.Title.TrimEnd('*', ' ');
+                    RebuildTabsUI();
+                }
+                RenderActiveTab(preserveScroll: true);
+            }
+        }
+
+        _isSplitViewActive = !_isSplitViewActive;
+        UpdateSplitViewUI();
+
+        if (_isSplitViewActive)
+        {
+            LoadActiveTabIntoEditor();
+            EditorTextEditor.Focus();
+        }
+    }
+
+    private void UpdateSplitViewUI()
+    {
+        if (_isSplitViewActive)
+        {
+            BtnToggleEdit.Background = new SolidColorBrush(Color.FromRgb(39, 39, 42)); // zinc-800
+            BtnToggleEdit.BorderBrush = new SolidColorBrush(Color.FromRgb(63, 63, 70)); // zinc-700
+            TxtToggleEdit.Text = "Reader View";
+            TxtToggleEditIcon.Text = "📖 ";
+
+            ColEditor.Width = new GridLength(1, GridUnitType.Star);
+            ColPreview.Width = new GridLength(1, GridUnitType.Star);
+            EditorPanel.Visibility = Visibility.Visible;
+            WorkspaceSplitter.Visibility = Visibility.Visible;
+            StatusMode.Text = "Split Edit";
+        }
+        else
+        {
+            BtnToggleEdit.Background = new SolidColorBrush(Color.FromRgb(18, 18, 21)); // zinc-950
+            BtnToggleEdit.BorderBrush = new SolidColorBrush(Color.FromRgb(39, 39, 42)); // zinc-800
+            TxtToggleEdit.Text = "Edit";
+            TxtToggleEditIcon.Text = "✏️ ";
+
+            ColEditor.Width = new GridLength(0);
+            EditorPanel.Visibility = Visibility.Collapsed;
+            WorkspaceSplitter.Visibility = Visibility.Collapsed;
+            StatusMode.Text = _activeTab != null ? (_activeTab.IsRawView ? "Raw Text" : "Rendered") : "Ready";
+        }
+    }
+
+    private void LoadActiveTabIntoEditor()
+    {
+        if (_activeTab == null) return;
+        try
+        {
+            _suppressEditorTextChanged = true;
+            string content = File.Exists(_activeTab.FilePath) ? File.ReadAllText(_activeTab.FilePath) : "";
+            EditorTextEditor.Text = content;
+            EditorTextEditor.ScrollToHome();
+            _isEditorModified = false;
+            UnsavedBadge.Visibility = Visibility.Collapsed;
+            UpdateEditorStats();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to load file into editor: {ex.Message}", "MarkRead", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            _suppressEditorTextChanged = false;
+        }
+    }
+
+    private void EditorTextEditor_TextChanged(object? sender, EventArgs e)
+    {
+        if (_suppressEditorTextChanged) return;
+
+        _isEditorModified = true;
+        UnsavedBadge.Visibility = Visibility.Visible;
+        UpdateEditorStats();
+
+        if (_activeTab != null && !_activeTab.Title.EndsWith('*'))
+        {
+            _activeTab.Title += " *";
+            RebuildTabsUI();
+        }
+
+        // Restart debounce timer for live preview rendering
+        _livePreviewDebounceTimer.Stop();
+        _livePreviewDebounceTimer.Start();
+    }
+
+    private void UpdateEditorStats()
+    {
+        string text = EditorTextEditor.Text ?? "";
+        int charCount = text.Length;
+        int wordCount = text.Split([' ', '\r', '\n', '\t'], StringSplitOptions.RemoveEmptyEntries).Length;
+        EditorStatsText.Text = $"{wordCount:N0} words · {charCount:N0} chars";
+    }
+
+    private async void RenderLiveEditorPreview()
+    {
+        if (_activeTab == null || !_isWebViewReady) return;
+
+        try
+        {
+            string content = EditorTextEditor.Text;
+            string? docDir = Path.GetDirectoryName(_activeTab.FilePath);
+
+            // Map document directory to https://doc.local/ for local image resolution
+            if (!string.IsNullOrEmpty(docDir) && Directory.Exists(docDir))
+            {
+                WebViewControl.CoreWebView2.SetVirtualHostNameToFolderMapping("doc.local", docDir, CoreWebView2HostResourceAccessKind.Allow);
+            }
+
+            string html = _renderer.RenderToHtml(content, _activeTab.Title.TrimEnd('*', ' '), _activeTab.IsRawView, _currentTheme, _settings.FontSize, _settings.ReadingWidth);
+
+            // Inject <base href="https://doc.local/"> to automatically resolve local images
+            if (!string.IsNullOrEmpty(docDir))
+            {
+                int headIndex = html.IndexOf("<head>", StringComparison.OrdinalIgnoreCase);
+                if (headIndex >= 0)
+                {
+                    html = html.Insert(headIndex + 6, "\n    <base href=\"https://doc.local/\">");
+                }
+            }
+
+            double savedScrollRatio = 0;
+            try
+            {
+                string ratioJson = await WebViewControl.ExecuteScriptAsync("window.markRead ? window.markRead.getScrollRatio() : 0");
+                if (double.TryParse(ratioJson, out double r)) savedScrollRatio = r;
+            }
+            catch { }
+
+            WebViewControl.NavigateToString(html);
+
+            // Update stats
+            int wordCount = content.Split([' ', '\r', '\n', '\t'], StringSplitOptions.RemoveEmptyEntries).Length;
+            StatusDocInfo.Text = $"{wordCount:N0} words  |  editing";
+
+            if (savedScrollRatio > 0)
+            {
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(100);
+                    await Dispatcher.InvokeAsync(async () =>
+                    {
+                        await WebViewControl.ExecuteScriptAsync($"window.markRead && window.markRead.setScrollRatio({savedScrollRatio})");
+                    });
+                });
+            }
+        }
+        catch
+        {
+            // Ignore transient rendering errors during typing
+        }
+    }
+
+    private void SaveActiveDocument()
+    {
+        if (_activeTab == null) return;
+
+        try
+        {
+            string textToSave = _isSplitViewActive ? EditorTextEditor.Text : (File.Exists(_activeTab.FilePath) ? File.ReadAllText(_activeTab.FilePath) : "");
+            File.WriteAllText(_activeTab.FilePath, textToSave);
+
+            _isEditorModified = false;
+            UnsavedBadge.Visibility = Visibility.Collapsed;
+
+            if (_activeTab.Title.EndsWith('*'))
+            {
+                _activeTab.Title = _activeTab.Title.TrimEnd('*', ' ');
+                RebuildTabsUI();
+            }
+
+            StatusFilePath.Text = $"Saved: {_activeTab.FilePath}";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to save file: {ex.Message}", "MarkRead", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void BtnSaveDoc_Click(object sender, RoutedEventArgs e)
+    {
+        SaveActiveDocument();
+    }
+
+    private void EditorTextEditor_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.S)
+        {
+            SaveActiveDocument();
+            e.Handled = true;
+        }
+    }
+
+    // Markdown Formatting Toolbar Buttons
+    private void InsertEditorFormat(string prefix, string suffix, string placeholder)
+    {
+        int selStart = EditorTextEditor.SelectionStart;
+        int selLen = EditorTextEditor.SelectionLength;
+        string selText = EditorTextEditor.SelectedText;
+
+        string insertText = string.IsNullOrEmpty(selText) ? placeholder : selText;
+        string replacement = $"{prefix}{insertText}{suffix}";
+
+        EditorTextEditor.Document.Replace(selStart, selLen, replacement);
+        EditorTextEditor.Focus();
+        EditorTextEditor.Select(selStart + prefix.Length, insertText.Length);
+    }
+
+    private void BtnFormatBold_Click(object sender, RoutedEventArgs e) => InsertEditorFormat("**", "**", "bold text");
+    private void BtnFormatItalic_Click(object sender, RoutedEventArgs e) => InsertEditorFormat("*", "*", "italic text");
+    private void BtnFormatH2_Click(object sender, RoutedEventArgs e) => InsertEditorFormat("\n## ", "\n", "Heading 2");
+    private void BtnFormatList_Click(object sender, RoutedEventArgs e) => InsertEditorFormat("\n- ", "\n", "List item");
+    private void BtnFormatTask_Click(object sender, RoutedEventArgs e) => InsertEditorFormat("\n- [ ] ", "\n", "Task item");
+    private void BtnFormatCode_Click(object sender, RoutedEventArgs e) => InsertEditorFormat("\n```\n", "\n```\n", "code");
+    private void BtnFormatQuote_Click(object sender, RoutedEventArgs e) => InsertEditorFormat("\n> ", "\n", "Quote");
+    private void BtnFormatLink_Click(object sender, RoutedEventArgs e) => InsertEditorFormat("[", "](https://example.com)", "link title");
 
     // Toolbar Event Handlers
     private void BtnOpen_Click(object sender, RoutedEventArgs e)
@@ -664,6 +1051,25 @@ public partial class MainWindow : Window
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
+        if (_isEditorModified && _activeTab != null)
+        {
+            var res = MessageBox.Show(
+                $"Save changes to \"{_activeTab.Title.TrimEnd('*', ' ')}\" before closing?",
+                "MarkRead - Unsaved Changes",
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Cancel)
+            {
+                e.Cancel = true;
+                return;
+            }
+            if (res == MessageBoxResult.Yes)
+            {
+                SaveActiveDocument();
+            }
+        }
+
         if (!_isExplicitExit)
         {
             e.Cancel = true;
@@ -694,6 +1100,17 @@ public partial class MainWindow : Window
                 case Key.O:
                     BtnOpen_Click(this, new RoutedEventArgs());
                     e.Handled = true;
+                    break;
+                case Key.E:
+                    BtnToggleEdit_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                    break;
+                case Key.S:
+                    if (_isSplitViewActive)
+                    {
+                        SaveActiveDocument();
+                        e.Handled = true;
+                    }
                     break;
                 case Key.W:
                     if (_activeTab != null) CloseTab(_activeTab);
