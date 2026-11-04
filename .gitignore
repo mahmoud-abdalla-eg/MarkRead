@@ -35,6 +35,12 @@ yarn-debug.log*
 pnpm-debug.log*
 
 # ------------------------------------------
+# Local Settings & Secrets
+# ------------------------------------------
+settings.json
+*.settings.json
+
+# ------------------------------------------
 # Editor directories and files
 # ------------------------------------------
 .vscode/*
